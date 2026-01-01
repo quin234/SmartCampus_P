@@ -1,0 +1,108 @@
+{% extends 'education/base.html' %}
+
+{% block title %}Results - SmartCampus{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-chart-line"></i> Student Results</h2>
+    </div>
+    
+    <div class="filters">
+        <div class="filter-group">
+            <label class="form-label">Academic Year</label>
+            <select class="form-select" id="academic_year_filter" onchange="updateFilters()">
+                <option value="">All Academic Years</option>
+                {% for year_value, year_display in academic_year_choices %}
+                    <option value="{{ year_value }}" {% if selected_academic_year == year_value %}selected{% endif %}>{{ year_display }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="form-label">Semester</label>
+            <select class="form-select" id="semester_filter" onchange="updateFilters()">
+                <option value="">All Semesters</option>
+                {% for sem_value, sem_display in semester_choices %}
+                    <option value="{{ sem_value }}" {% if selected_semester == sem_value|stringformat:"s" %}selected{% endif %}>{{ sem_display }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="form-label">Unit</label>
+            <select class="form-select" id="unit_filter" onchange="updateFilters()">
+                <option value="">All Units</option>
+                {% for unit in units %}
+                    <option value="{{ unit.pk }}" {% if request.GET.unit == unit.pk|stringformat:"s" %}selected{% endif %}>{{ unit.code }} - {{ unit.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <script>
+        function updateFilters() {
+            const params = new URLSearchParams();
+            const academicYear = document.getElementById('academic_year_filter').value;
+            const semester = document.getElementById('semester_filter').value;
+            const unit = document.getElementById('unit_filter').value;
+            
+            if (academicYear) params.set('academic_year', academicYear);
+            if (semester) params.set('semester', semester);
+            if (unit) params.set('unit', unit);
+            
+            window.location.href = '?' + params.toString();
+        }
+    </script>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Admission Number</th>
+                    <th>Unit Code</th>
+                    <th>Unit Name</th>
+                    <th>Academic Year</th>
+                    <th>Semester</th>
+                    <th>CAT Marks</th>
+                    <th>Exam Marks</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in results %}
+                <tr>
+                    <td>{{ item.enrollment.student.full_name }}</td>
+                    <td>{{ item.enrollment.student.admission_number }}</td>
+                    <td>{{ item.enrollment.unit.code }}</td>
+                    <td>{{ item.enrollment.unit.name }}</td>
+                    <td>{{ item.enrollment.academic_year }}</td>
+                    <td>Semester {{ item.enrollment.semester }}</td>
+                    <td>{{ item.result.cat_marks|default:"-" }}</td>
+                    <td>{{ item.result.exam_marks|default:"-" }}</td>
+                    <td>
+                        {% if item.result.total %}
+                            <strong>{{ item.result.total }}</strong>
+                        {% else %}
+                            <span style="color: var(--text-light);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.can_edit or user.is_college_admin %}
+                            <a href="{% url 'result_edit' item.enrollment.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                        {% else %}
+                            <span style="color: var(--text-light);">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 2rem;">No results found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

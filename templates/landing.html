@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cambridge Universal - Cambridge College Management Platform. Register your Cambridge College institution today and streamline your educational operations with comprehensive student, course, and financial management.">
+    <meta name="keywords" content="cambridge college, cambridge universal, college management, education platform, student management, school registration, cambridge college management system">
+    <title>Cambridge Universal - Cambridge College Management Platform | Register Your College</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/landing-new.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Grey overlay effect for the page - more prominent */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(128, 128, 128, 0.25);
+            z-index: 9998;
+            pointer-events: none;
+        }
+        
+        /* Additional grey overlay for content sections */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(128, 128, 128, 0.15) 0%, rgba(128, 128, 128, 0.25) 100%);
+            z-index: 9997;
+            pointer-events: none;
+        }
+        
+        /* Ensure content is above overlay */
+        .navbar,
+        .registration-section {
+            position: relative;
+            z-index: 10000;
+        }
+        
+        /* Compact and Vibrant Registration Form Styles for Landing Page */
+        .registration-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            padding: 3rem 0;
+        }
+        
+        .registration-form {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 24px;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .form-section {
+            background: rgba(223, 230, 240, 0.836);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+        
+        .form-section:hover {
+            background: rgba(203, 211, 221, 0.918);
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        
+        .form-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .form-section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .form-section-title i {
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .form-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .form-label i {
+            color: #667eea;
+            font-size: 13px;
+        }
+        
+        .required {
+            color: #ef4444;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 8px 10px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(15, 23, 42, 0.7);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+        
+        .form-input::placeholder {
+            color: #cbd5e1;
+            opacity: 0.5;
+        }
+        
+        .password-input-wrapper {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.3s;
+        }
+        
+        .password-toggle:hover {
+            color: #667eea;
+        }
+        
+        .error-message {
+            font-size: 12px;
+            color: #ef4444;
+            margin-top: 4px;
+            min-height: 16px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-loader.hidden {
+            display: none;
+        }
+        
+        .section-title {
+            color: white;
+        }
+        
+        .section-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* Wizard button styles with rounded borders */
+        .btn-wizard-primary {
+            border-radius: 25px !important;
+            padding: 10px 24px !important;
+            font-weight: 600;
+            border: 2px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-wizard-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-wizard-secondary {
+            border-radius: 25px !important;
+            padding: 10px 24px !important;
+        }
+        
+        .btn-wizard-submit {
+            border-radius: 25px !important;
+            padding: 10px 24px !important;
+        }
+        
+        /* Compact step titles and descriptions */
+        .step-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .step-description {
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .registration-form {
+                padding: 18px;
+            }
+            
+            .form-section {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- New Professional Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Cambridge Universal</h1>
+                        <p>Cambridge College Management Platform</p>
+                    </div>
+                </div>
+                <div class="nav-links" id="nav-links">
+                    <div class="nav-actions">
+                        <a href="{% url 'admin_login' %}" class="btn-nav btn-nav-primary">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </div>
+                </div>
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Step-by-Step Registration Form Section -->
+    <section id="register" class="registration-section">
+        <div class="container">
+            <div class="registration-wizard">
+                <div class="wizard-header">
+                    <h2><i class="fas fa-graduation-cap"></i> College Registration</h2>
+                    <p>Register a new college in the system</p>
+                </div>
+                
+                <div class="wizard-steps">
+                    <div class="step-indicator">
+                        <div class="step-item active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-label">College Info</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Admin Account</div>
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Review</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="register-form" class="registration-form" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    <div class="wizard-body">
+                        <!-- Step 1: College Information -->
+                        <div class="wizard-step active" data-step="1">
+                            <h3 class="step-title">
+                                <i class="fas fa-school"></i> College Information
+                            </h3>
+                            <p class="step-description">Please provide your college's basic information</p>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-building"></i> College Name <span class="required">*</span>
+                                </label>
+                                <input type="text" id="school_name" name="school_name" class="form-input" data-required="true">
+                                <span class="error-message" id="error-school-name"></span>
+                            </div>
+                            <input type="hidden" id="school_type" name="school_type" value="college">
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-map-marker-alt"></i> College Address <span class="required">*</span>
+                                </label>
+                                <textarea id="school_address" name="school_address" class="form-textarea" rows="3" data-required="true"></textarea>
+                                <span class="error-message" id="error-school-address"></span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-city"></i> County/City <span class="required">*</span>
+                                    </label>
+                                    <input type="text" id="county_city" name="county_city" class="form-input" data-required="true">
+                                    <span class="error-message" id="error-county-city"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-phone"></i> Contact Number <span class="required">*</span>
+                                    </label>
+                                    <input type="tel" id="school_contact_number" name="school_contact_number" class="form-input" data-required="true">
+                                    <span class="error-message" id="error-school-contact"></span>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-envelope"></i> College Email <span class="required">*</span>
+                                    </label>
+                                    <input type="email" id="school_email" name="school_email" class="form-input" data-required="true">
+                                    <span class="error-message" id="error-school-email"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-globe"></i> Website (Optional)
+                                    </label>
+                                    <input type="url" id="school_website" name="school_website" class="form-input" placeholder="https://example.com">
+                                    <span class="error-message" id="error-school-website"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Admin Account Information -->
+                        <div class="wizard-step" data-step="2">
+                            <h3 class="step-title">
+                                <i class="fas fa-user-shield"></i> Admin Account Information
+                            </h3>
+                            <p class="step-description">Create your administrator account to manage your college</p>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-user"></i> Full Name <span class="required">*</span>
+                                </label>
+                                <input type="text" id="owner_full_name" name="owner_full_name" class="form-input" data-required="true">
+                                <span class="error-message" id="error-owner-name"></span>
+                            </div>
+                            <input type="hidden" id="position" name="position" value="director">
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-envelope"></i> Email <span class="required">*</span>
+                                    </label>
+                                    <input type="email" id="owner_email" name="owner_email" class="form-input" data-required="true">
+                                    <span class="error-message" id="error-owner-email"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-phone"></i> Phone <span class="required">*</span>
+                                    </label>
+                                    <input type="tel" id="owner_phone" name="owner_phone" class="form-input" data-required="true">
+                                    <span class="error-message" id="error-owner-phone"></span>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-key"></i> Username <span class="required">*</span>
+                                    </label>
+                                    <input type="text" id="username" name="username" class="form-input" data-required="true">
+                                    <span class="error-message" id="error-username"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-lock"></i> Password <span class="required">*</span>
+                                    </label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="password" name="password" class="form-input" data-required="true">
+                                        <button type="button" class="password-toggle" id="password-toggle">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <span class="error-message" id="error-password"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Review -->
+                        <div class="wizard-step" data-step="3">
+                            <h3 class="step-title">
+                                <i class="fas fa-check-circle"></i> Review & Submit
+                            </h3>
+                            <p class="step-description">Please review your information before submitting</p>
+                            
+                            <div id="review-content" style="background: var(--light-gray); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                                <!-- Review content will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Error/Success Messages -->
+                        <div id="form-messages" class="form-messages"></div>
+                    </div>
+
+                    <!-- Wizard Footer with Navigation Buttons -->
+                    <div class="wizard-footer">
+                        <button type="button" class="btn-wizard btn-wizard-secondary" id="prev-btn" style="display: none;">
+                            <i class="fas fa-arrow-left"></i> Previous
+                        </button>
+                        <div style="flex: 1;"></div>
+                        <button type="button" class="btn-wizard btn-wizard-primary" id="next-btn">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button type="submit" class="btn-wizard btn-wizard-submit" id="submit-btn" style="display: none;">
+                            <i class="fas fa-paper-plane"></i> Submit Registration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" style="background: var(--light-gray); padding: 2rem 0; border-top: 1px solid var(--border-color); margin-top: 3rem;">
+        <div class="container">
+            <div style="text-align: center; color: var(--text-gray);">
+                <p>&copy; 2024 Cambridge Universal. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/landing.js' %}"></script>
+    <script>
+        // Mobile menu toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const navLinks = document.getElementById('nav-links');
+            
+            if (mobileMenuToggle && navLinks) {
+                mobileMenuToggle.addEventListener('click', function() {
+                    navLinks.classList.toggle('active');
+                    mobileMenuToggle.classList.toggle('active');
+                });
+                
+                // Close mobile menu when clicking on a link
+                const navLinksItems = navLinks.querySelectorAll('a');
+                navLinksItems.forEach(link => {
+                    link.addEventListener('click', function() {
+                        navLinks.classList.remove('active');
+                        mobileMenuToggle.classList.remove('active');
+                    });
+                });
+                
+                // Close mobile menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!mobileMenuToggle.contains(event.target) && !navLinks.contains(event.target)) {
+                        navLinks.classList.remove('active');
+                        mobileMenuToggle.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    const href = this.getAttribute('href');
+                    if (href !== '#' && href !== '') {
+                        e.preventDefault();
+                        const target = document.querySelector(href);
+                        if (target) {
+                            const offsetTop = target.offsetTop - 100;
+                            window.scrollTo({
+                                top: offsetTop,
+                                behavior: 'smooth'
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Step-by-Step Registration Wizard
+            let currentStep = 1;
+            const totalSteps = 3;
+            const steps = document.querySelectorAll('.wizard-step');
+            const stepIndicators = document.querySelectorAll('.step-item');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            const form = document.getElementById('register-form');
+
+            function updateStep(step) {
+                // Hide all steps
+                steps.forEach(s => s.classList.remove('active'));
+                stepIndicators.forEach(s => s.classList.remove('active', 'completed'));
+
+                // Show current step
+                if (steps[step - 1]) {
+                    steps[step - 1].classList.add('active');
+                }
+
+                // Update step indicators
+                for (let i = 0; i < step; i++) {
+                    if (stepIndicators[i]) {
+                        stepIndicators[i].classList.add('completed');
+                        if (i === step - 1) {
+                            stepIndicators[i].classList.add('active');
+                        }
+                    }
+                }
+
+                // Update buttons
+                prevBtn.style.display = step > 1 ? 'inline-flex' : 'none';
+                nextBtn.style.display = step < totalSteps ? 'inline-flex' : 'none';
+                submitBtn.style.display = step === totalSteps ? 'inline-flex' : 'none';
+
+                // Update review content on step 3
+                if (step === 3) {
+                    updateReviewContent();
+                }
+            }
+
+            function validateStep(step) {
+                const currentStepElement = steps[step - 1];
+                const requiredFields = currentStepElement.querySelectorAll('[data-required="true"]');
+                let isValid = true;
+
+                requiredFields.forEach(field => {
+                    const value = field.value.trim();
+                    const errorElement = document.getElementById('error-' + field.name) || field.nextElementSibling;
+                    let fieldValid = true;
+                    let errorMessage = '';
+
+                    // Check if field is empty
+                    if (!value) {
+                        fieldValid = false;
+                        errorMessage = 'This field is required';
+                    }
+                    // Validate email format
+                    else if (field.type === 'email' && value) {
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(value)) {
+                            fieldValid = false;
+                            errorMessage = 'Please enter a valid email address';
+                        }
+                    }
+                    // Validate URL format (for website field - only if provided)
+                    else if (field.type === 'url' && value && !field.hasAttribute('data-required')) {
+                        try {
+                            new URL(value);
+                        } catch (e) {
+                            fieldValid = false;
+                            errorMessage = 'Please enter a valid URL (e.g., https://example.com)';
+                        }
+                    }
+                    // Validate phone format
+                    else if (field.type === 'tel' && value) {
+                        const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+                        if (!phoneRegex.test(value) || value.replace(/\D/g, '').length < 8) {
+                            fieldValid = false;
+                            errorMessage = 'Please enter a valid phone number';
+                        }
+                    }
+                    // Validate password length
+                    else if (field.type === 'password' && value) {
+                        if (value.length < 6) {
+                            fieldValid = false;
+                            errorMessage = 'Password must be at least 6 characters';
+                        }
+                    }
+                    // Validate username format
+                    else if (field.name === 'username' && value) {
+                        const usernameRegex = /^[a-zA-Z0-9_]+$/;
+                        if (!usernameRegex.test(value)) {
+                            fieldValid = false;
+                            errorMessage = 'Username can only contain letters, numbers, and underscores';
+                        } else if (value.length < 3) {
+                            fieldValid = false;
+                            errorMessage = 'Username must be at least 3 characters';
+                        }
+                    }
+
+                    if (!fieldValid) {
+                        isValid = false;
+                        field.style.borderColor = '#DC2626';
+                        field.style.borderWidth = '2px';
+                        if (errorElement && errorElement.classList.contains('error-message')) {
+                            errorElement.textContent = errorMessage;
+                            errorElement.classList.add('show');
+                        }
+                    } else {
+                        field.style.borderColor = '';
+                        field.style.borderWidth = '';
+                        if (errorElement && errorElement.classList.contains('error-message')) {
+                            errorElement.textContent = '';
+                            errorElement.classList.remove('show');
+                        }
+                    }
+                });
+
+                return isValid;
+            }
+
+            // Clear errors when user starts typing
+            function setupFieldValidation() {
+                const allFields = form.querySelectorAll('input, textarea');
+                allFields.forEach(field => {
+                    field.addEventListener('input', function() {
+                        if (this.style.borderColor === 'rgb(220, 38, 38)' || this.style.borderColor === '#DC2626') {
+                            const errorElement = document.getElementById('error-' + this.name) || this.nextElementSibling;
+                            if (errorElement && errorElement.classList.contains('error-message')) {
+                                errorElement.textContent = '';
+                                errorElement.classList.remove('show');
+                            }
+                            this.style.borderColor = '';
+                            this.style.borderWidth = '';
+                        }
+                    });
+                });
+            }
+
+            function updateReviewContent() {
+                const reviewContent = document.getElementById('review-content');
+                const formData = new FormData(form);
+                
+                reviewContent.innerHTML = `
+                    <h4 style="margin-bottom: 1rem; color: var(--text-dark);"><i class="fas fa-school"></i> College Information</h4>
+                    <p><strong>College Name:</strong> ${formData.get('school_name') || 'N/A'}</p>
+                    <p><strong>Address:</strong> ${formData.get('school_address') || 'N/A'}</p>
+                    <p><strong>County/City:</strong> ${formData.get('county_city') || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${formData.get('school_email') || 'N/A'}</p>
+                    <p><strong>Phone:</strong> ${formData.get('school_contact_number') || 'N/A'}</p>
+                    
+                    <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-dark);"><i class="fas fa-user-shield"></i> Director Account</h4>
+                    <p><strong>Name:</strong> ${formData.get('owner_full_name') || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${formData.get('owner_email') || 'N/A'}</p>
+                    <p><strong>Username:</strong> ${formData.get('username') || 'N/A'}</p>
+                `;
+            }
+
+            nextBtn.addEventListener('click', function() {
+                if (validateStep(currentStep)) {
+                    if (currentStep < totalSteps) {
+                        currentStep++;
+                        updateStep(currentStep);
+                    }
+                } else {
+                    // Scroll to first error
+                    const currentStepElement = steps[currentStep - 1];
+                    const firstError = currentStepElement.querySelector('[style*="border-color: rgb(220, 38, 38)"], [style*="border-color: #DC2626"]');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstError.focus();
+                    }
+                }
+            });
+
+            prevBtn.addEventListener('click', function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateStep(currentStep);
+                }
+            });
+
+            // Password toggle
+            const passwordToggle = document.getElementById('password-toggle');
+            if (passwordToggle) {
+                passwordToggle.addEventListener('click', function() {
+                    const passwordInput = document.getElementById('password');
+                    const icon = this.querySelector('i');
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        passwordInput.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                });
+            }
+
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validate all steps before submission
+                let allStepsValid = true;
+                for (let i = 1; i <= totalSteps; i++) {
+                    if (!validateStep(i)) {
+                        allStepsValid = false;
+                        // Switch to first invalid step
+                        if (currentStep !== i) {
+                            currentStep = i;
+                            updateStep(currentStep);
+                        }
+                        break;
+                    }
+                }
+                
+                if (!allStepsValid) {
+                    // Scroll to first error
+                    const currentStepElement = steps[currentStep - 1];
+                    const firstError = currentStepElement.querySelector('[style*="border-color: rgb(220, 38, 38)"], [style*="border-color: #DC2626"]');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstError.focus();
+                    }
+                    return;
+                }
+
+                const submitBtn = document.getElementById('submit-btn');
+                const formMessages = document.getElementById('form-messages');
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+                formMessages.className = 'form-messages';
+                formMessages.style.display = 'none';
+
+                // Get form data
+                const formData = new FormData(form);
+                
+                // Ensure hidden fields are included and all required fields are present
+                const schoolType = document.getElementById('school_type');
+                const position = document.getElementById('position');
+                if (schoolType) formData.set('school_type', schoolType.value || 'college');
+                if (position) formData.set('position', position.value || 'director');
+                
+                // Ensure all required fields have values
+                const requiredFields = ['school_name', 'school_address', 'county_city', 'school_contact_number', 
+                                      'school_email', 'owner_full_name', 'owner_email', 'owner_phone', 
+                                      'username', 'password'];
+                let missingFields = [];
+                requiredFields.forEach(field => {
+                    const value = formData.get(field);
+                    if (!value || (typeof value === 'string' && !value.trim())) {
+                        missingFields.push(field);
+                    }
+                });
+                
+                if (missingFields.length > 0) {
+                    alert('Please fill in all required fields: ' + missingFields.join(', '));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Registration';
+                    return;
+                }
+                
+                // Debug: Log form data
+                console.log('Form data being sent:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(key + ': ' + value);
+                }
+                
+                // Submit via fetch
+                fetch('{% url "register_school" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw { data, status: response.status };
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        formMessages.className = 'form-messages success';
+                        formMessages.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Registration successful!');
+                        formMessages.style.display = 'block';
+                        form.reset();
+                        currentStep = 1;
+                        updateStep(1);
+                        
+                        setTimeout(() => {
+                            window.location.href = '{% url "admin_login" %}';
+                        }, 2000);
+                    } else {
+                        // Show detailed error messages
+                        let errorHtml = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Registration failed. Please try again.');
+                        if (data.errors) {
+                            errorHtml += '<ul style="margin-top: 10px; padding-left: 20px;">';
+                            for (let field in data.errors) {
+                                errorHtml += '<li>' + field + ': ' + data.errors[field] + '</li>';
+                            }
+                            errorHtml += '</ul>';
+                        }
+                        if (data.debug) {
+                            console.error('Registration error debug:', data.debug);
+                        }
+                        formMessages.className = 'form-messages error';
+                        formMessages.innerHTML = errorHtml;
+                        formMessages.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Registration error:', error);
+                    let errorMessage = 'An error occurred. Please try again.';
+                    if (error.data) {
+                        errorMessage = error.data.message || errorMessage;
+                        if (error.data.errors) {
+                            errorMessage += '<ul style="margin-top: 10px; padding-left: 20px;">';
+                            for (let field in error.data.errors) {
+                                errorMessage += '<li>' + field + ': ' + error.data.errors[field] + '</li>';
+                            }
+                            errorMessage += '</ul>';
+                        }
+                        if (error.data.debug) {
+                            console.error('Registration error debug:', error.data.debug);
+                            errorMessage += '<br><small>Check console for details</small>';
+                        }
+                    }
+                    formMessages.className = 'form-messages error';
+                    formMessages.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + errorMessage;
+                    formMessages.style.display = 'block';
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Registration';
+                });
+            });
+
+            // Initialize
+            updateStep(1);
+            setupFieldValidation();
+        });
+    </script>
+</body>
+</html>
+

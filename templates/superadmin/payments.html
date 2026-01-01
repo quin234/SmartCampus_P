@@ -1,0 +1,260 @@
+{% extends 'superadmin/base.html' %}
+{% load static %}
+
+{% block title %}Payments - Super Admin{% endblock %}
+
+{% block content %}
+<div class="main-content" style="padding: 20px;">
+    <div class="page-header" style="margin-bottom: 30px;">
+        <h1 style="font-size: 28px; margin-bottom: 10px;"><i class="fas fa-credit-card"></i> College Payments</h1>
+        <p style="color: #666;">Manage payment configurations and view payment status for all colleges</p>
+    </div>
+
+{% if error %}
+<div class="alert alert-danger" style="padding: 15px; margin-bottom: 20px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 5px;">
+    <strong>Error:</strong> {{ error }}
+</div>
+{% endif %}
+
+<div class="content-card" style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px;">
+    <div class="card-header">
+        <h2>College Payment Status</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>College Name</th>
+                        <th>Branch</th>
+                        <th>Payment Status</th>
+                        <th>Amount</th>
+                        <th>Last Payment Date</th>
+                        <th>Valid Until</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in college_list %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.college.name }}</strong>
+                        </td>
+                        <td>—</td>
+                        <td>
+                            {% if item.payment_status == 'Paid' %}
+                                <span class="badge badge-success">Paid</span>
+                            {% elif item.payment_status == 'Expired' %}
+                                <span class="badge badge-warning">Expired</span>
+                            {% else %}
+                                <span class="badge badge-danger">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.config %}
+                                KES {{ item.config.amount|floatformat:2 }}
+                            {% else %}
+                                <span class="text-muted">Not configured</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.latest_payment and item.latest_payment.payment_date %}
+                                {{ item.latest_payment.payment_date|date:"M d, Y" }}
+                            {% else %}
+                                <span class="text-muted">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.latest_payment and item.latest_payment.valid_until %}
+                                {{ item.latest_payment.valid_until|date:"M d, Y" }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'superadmin:payment_config' item.college.id %}" class="btn-icon btn-info" title="Configure Payment">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+                                {% if item.latest_payment %}
+                                <a href="{% url 'superadmin:payment_detail' item.latest_payment.id %}" class="btn-icon btn-primary" title="View Payment Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% for branch in item.branches %}
+                    <tr class="branch-row">
+                        <td style="padding-left: 40px;">
+                            <i class="fas fa-code-branch"></i> {{ branch.college.name }}
+                        </td>
+                        <td>{{ item.college.name }}</td>
+                        <td>
+                            {% if branch.payment_status == 'Paid' %}
+                                <span class="badge badge-success">Paid</span>
+                            {% elif branch.payment_status == 'Expired' %}
+                                <span class="badge badge-warning">Expired</span>
+                            {% else %}
+                                <span class="badge badge-danger">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if branch.config %}
+                                KES {{ branch.config.amount|floatformat:2 }}
+                            {% else %}
+                                <span class="text-muted">Not configured</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if branch.latest_payment and branch.latest_payment.payment_date %}
+                                {{ branch.latest_payment.payment_date|date:"M d, Y" }}
+                            {% else %}
+                                <span class="text-muted">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if branch.latest_payment and branch.latest_payment.valid_until %}
+                                {{ branch.latest_payment.valid_until|date:"M d, Y" }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'superadmin:payment_config' branch.college.id %}" class="btn-icon btn-info" title="Configure Payment">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+                                {% if branch.latest_payment %}
+                                <a href="{% url 'superadmin:payment_detail' branch.latest_payment.id %}" class="btn-icon btn-primary" title="View Payment Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted" style="padding: 40px; color: #999;">
+                            <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
+                            <p>No colleges found. Please register colleges first.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.main-content {
+    padding: 20px;
+}
+
+.content-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: #f5f5f5;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.data-table tr:hover {
+    background: #f9f9f9;
+}
+
+.branch-row {
+    background: #fafafa;
+}
+
+.badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #333;
+}
+
+.badge-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.text-muted {
+    color: #999;
+}
+</style>
+{% endblock %}
+

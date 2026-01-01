@@ -1,0 +1,425 @@
+<!-- Suspended College Modal - Cannot be dismissed -->
+<div id="suspended-modal" class="suspended-modal-overlay" style="display: none;">
+    <div class="suspended-modal-content">
+        <div class="suspended-emoji">⚠️</div>
+        <h1 class="suspended-title">Payment Required</h1>
+        <p class="suspended-message">
+            Your college account has been suspended. Please make a payment to reactivate your account.
+        </p>
+        <div class="suspended-college-name">
+            {{ college.name }}
+        </div>
+        
+        {% if payment_config %}
+        <!-- Payment Section -->
+        <div class="payment-section">
+            <div class="payment-info">
+                <div class="payment-amount">
+                    <span class="amount-label">Payment Amount:</span>
+                    <span class="amount-value">KES {{ payment_config.amount|floatformat:2 }}</span>
+                </div>
+                {% if latest_payment %}
+                <div class="payment-status">
+                    <span class="status-label">Last Payment:</span>
+                    <span class="status-value">
+                        {% if latest_payment.status == 'completed' %}
+                            {% if latest_payment.is_valid %}
+                                <span class="badge-success">Paid (Valid until {{ latest_payment.valid_until|date:"M d, Y" }})</span>
+                            {% else %}
+                                <span class="badge-warning">Expired ({{ latest_payment.valid_until|date:"M d, Y" }})</span>
+                            {% endif %}
+                        {% elif latest_payment.status == 'processing' %}
+                            <span class="badge-info">Processing...</span>
+                        {% elif latest_payment.status == 'failed' %}
+                            <span class="badge-danger">Failed</span>
+                        {% else %}
+                            <span class="badge-warning">Pending</span>
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- M-Pesa Payment Form -->
+            <form id="college-payment-form" class="payment-form">
+                <div class="form-group">
+                    <label for="payment-phone">M-Pesa Phone Number *</label>
+                    <input type="text" id="payment-phone" name="phone_number" placeholder="254712345678" required class="form-control">
+                    <small class="form-text">Enter your M-Pesa registered phone number</small>
+                </div>
+                
+                <button type="submit" class="btn-pay-now" id="pay-now-btn">
+                    <i class="fas fa-mobile-alt"></i> Pay via M-Pesa
+                </button>
+            </form>
+            
+            <div id="payment-loading" style="display: none; text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #007bff;"></i>
+                <p>Processing payment request...</p>
+            </div>
+            
+            <div id="payment-message" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
+        </div>
+        {% else %}
+        <div class="payment-section">
+            <p class="text-muted">Payment configuration not found. Please contact Super Admin.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.suspended-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.suspended-modal-content {
+    text-align: center;
+    padding: 60px 40px;
+    background: var(--bg-card, #ffffff);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-width: 500px;
+    width: 90%;
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.suspended-emoji {
+    font-size: 120px;
+    line-height: 1;
+    margin-bottom: 30px;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.suspended-title {
+    font-size: 48px;
+    font-weight: bold;
+    color: var(--primary-color, #e74c3c);
+    margin: 0 0 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.suspended-message {
+    font-size: 18px;
+    color: var(--text-color, #333);
+    margin: 0 0 30px 0;
+    line-height: 1.6;
+}
+
+.suspended-college-name {
+    font-size: 16px;
+    color: var(--text-light, #666);
+    font-weight: 500;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    margin-bottom: 30px;
+}
+
+.payment-section {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid var(--border-color, #e0e0e0);
+}
+
+.payment-info {
+    margin-bottom: 20px;
+}
+
+.payment-amount, .payment-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.payment-amount:last-child, .payment-status:last-child {
+    border-bottom: none;
+}
+
+.amount-label, .status-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.amount-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.status-value {
+    font-size: 0.95rem;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #333;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+}
+
+.badge-danger {
+    background: #dc3545;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+}
+
+.badge-info {
+    background: #17a2b8;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+}
+
+.payment-form {
+    margin-top: 20px;
+}
+
+.payment-form .form-group {
+    margin-bottom: 20px;
+}
+
+.payment-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.payment-form .form-control {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.payment-form .form-control:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.payment-form .form-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.btn-pay-now {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-pay-now:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-pay-now:active {
+    transform: translateY(0);
+}
+
+.btn-pay-now:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.text-muted {
+    color: #666;
+    text-align: center;
+    padding: 20px;
+}
+</style>
+
+<script>
+// Show suspended modal if college is suspended
+document.addEventListener('DOMContentLoaded', function() {
+    {% if college_is_suspended %}
+    const suspendedModal = document.getElementById('suspended-modal');
+    if (suspendedModal) {
+        suspendedModal.style.display = 'flex';
+        // Prevent any clicks from closing the modal (except form interactions)
+        suspendedModal.addEventListener('click', function(e) {
+            if (e.target === suspendedModal) {
+                e.stopPropagation();
+                e.preventDefault();
+                return false;
+            }
+        });
+        // Prevent escape key from closing
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        });
+    }
+    
+    // Handle payment form submission
+    const paymentForm = document.getElementById('college-payment-form');
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const phoneNumber = document.getElementById('payment-phone').value.trim();
+            const payBtn = document.getElementById('pay-now-btn');
+            const loadingDiv = document.getElementById('payment-loading');
+            const messageDiv = document.getElementById('payment-message');
+            
+            // Validate phone number
+            if (!phoneNumber) {
+                showPaymentMessage('Please enter your M-Pesa phone number', 'error');
+                return;
+            }
+            
+            // Format phone number
+            let formattedPhone = phoneNumber;
+            if (formattedPhone.startsWith('0')) {
+                formattedPhone = '254' + formattedPhone.substring(1);
+            } else if (formattedPhone.startsWith('+254')) {
+                formattedPhone = formattedPhone.substring(1);
+            } else if (!formattedPhone.startsWith('254')) {
+                formattedPhone = '254' + formattedPhone;
+            }
+            
+            // Show loading
+            paymentForm.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            messageDiv.style.display = 'none';
+            payBtn.disabled = true;
+            
+            try {
+                // Get CSRF token
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                
+                const response = await fetch('{% url "director_initiate_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        phone_number: formattedPhone
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showPaymentMessage(data.message || 'Payment request sent successfully! Check your phone for M-Pesa prompt.', 'success');
+                    // Reload page after 5 seconds to check payment status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 5000);
+                } else {
+                    showPaymentMessage(data.error || 'Failed to initiate payment. Please try again.', 'error');
+                    paymentForm.style.display = 'block';
+                    loadingDiv.style.display = 'none';
+                    payBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                showPaymentMessage('An error occurred. Please try again.', 'error');
+                paymentForm.style.display = 'block';
+                loadingDiv.style.display = 'none';
+                payBtn.disabled = false;
+            }
+        });
+    }
+    
+    function showPaymentMessage(message, type) {
+        const messageDiv = document.getElementById('payment-message');
+        messageDiv.style.display = 'block';
+        messageDiv.textContent = message;
+        messageDiv.className = type === 'success' ? 'alert-success' : 'alert-error';
+        messageDiv.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
+        messageDiv.style.color = type === 'success' ? '#155724' : '#721c24';
+        messageDiv.style.border = `1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'}`;
+    }
+    {% endif %}
+});
+</script>
+

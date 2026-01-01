@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Super Admin - SmartCampus{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin/superadmin.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="superadmin-dashboard">
+    <!-- Top Navigation Bar -->
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <h2>SmartCampus</h2>
+                    <span class="logo-subtitle">Super Admin</span>
+                </div>
+            </div>
+            <div class="navbar-right">
+                <div class="notifications">
+                    <button class="notification-btn" id="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                </div>
+                <div class="user-profile">
+                    <div class="profile-dropdown">
+                        <button class="profile-btn">
+                            <div class="profile-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                                {{ user.username|first|upper }}
+                            </div>
+                            <span>{{ user.username }}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="{% url 'superadmin:profile' %}" class="dropdown-item" data-action="profile">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                            <a href="{% url 'superadmin:settings' %}" class="dropdown-item" data-action="settings">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'superadmin:logout' %}" class="dropdown-item" data-action="logout">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+            <ul class="nav-menu">
+                <li class="nav-item" data-page="dashboard">
+                    <a href="{% url 'superadmin:dashboard' %}" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="colleges">
+                    <a href="{% url 'superadmin:colleges' %}" class="nav-link">
+                        <i class="fas fa-university"></i>
+                        <span>Colleges</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="academic">
+                    <a href="{% url 'superadmin:academic' %}" class="nav-link">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Academic</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="payments">
+                    <a href="{% url 'superadmin:payments' %}" class="nav-link">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Payments</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="finance">
+                    <a href="{% url 'superadmin:payments' %}" class="nav-link" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; margin: 8px 0;" onclick="window.location.href=this.getAttribute('href'); return false;">
+                        <i class="fas fa-wallet"></i>
+                        <span>Finance</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="analytics">
+                    <a href="{% url 'superadmin:analytics' %}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="settings">
+                    <a href="{% url 'superadmin:settings' %}" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>System Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="profile">
+                    <a href="{% url 'superadmin:profile' %}" class="nav-link">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item logout-item">
+                    <a href="{% url 'superadmin:logout' %}" class="nav-link" id="sidebar-logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="{% static 'js/admin/superadmin.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+    
+</body>
+</html>
+

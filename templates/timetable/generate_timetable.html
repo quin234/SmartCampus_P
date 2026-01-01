@@ -1,0 +1,774 @@
+{% extends 'timetable/base.html' %}
+{% load static %}
+
+{% block title %}Generate Timetable - SmartCampus{% endblock %}
+
+{% block timetable_content %}
+<!-- Sub-tabs for Generate Timetable -->
+<div style="display: flex; gap: 8px; margin-bottom: 24px; padding: 0 24px;">
+    <a href="{% url 'timetable:generate_timetable' %}?tab=setup" class="inner-tab-btn {% if request.GET.tab == 'setup' %}active{% endif %}" style="display: inline-block;">
+        <i class="fas fa-tools"></i> Setup Data
+    </a>
+    <a href="{% url 'timetable:generate_timetable' %}?tab=generate" class="inner-tab-btn {% if request.GET.tab != 'setup' %}active{% endif %}" style="display: inline-block;">
+        <i class="fas fa-cogs"></i> Generate
+    </a>
+</div>
+
+{% if request.GET.tab != 'setup' %}
+<!-- Generate Tab Content -->
+{% if is_registrar %}
+<div class="content-card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title"><i class="fas fa-cogs"></i> Generate Timetable</h3>
+        <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-primary" id="generateNewBtn" onclick="generateNewTimetable()">
+                <i class="fas fa-magic"></i> Generate New
+            </button>
+            <button type="button" class="btn btn-success" id="deployBtn" onclick="deployTimetable()" style="display: none;" disabled>
+                <i class="fas fa-rocket"></i> Deploy Timetable
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Hidden CSRF Token -->
+        {% csrf_token %}
+        
+        <!-- Recommendations/Errors Display -->
+        <div id="recommendationsContainer" style="display: none; margin-bottom: 16px;"></div>
+        
+        <!-- Grid Container -->
+        <div id="timetableGridContainer" style="margin-top: 24px;">
+            <div class="content-card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="card-title"><i class="fas fa-table"></i> Timetable Grid</h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <!-- Mode Toggle -->
+                        <div class="btn-group" role="group" style="display: flex; gap: 4px;">
+                            <button type="button" class="btn btn-sm btn-primary" id="viewModeCourse" onclick="switchViewMode('course')">
+                                <i class="fas fa-graduation-cap"></i> Courses
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary" id="viewModeLecturer" onclick="switchViewMode('lecturer')">
+                                <i class="fas fa-chalkboard-teacher"></i> Lecturers
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary" id="viewModeClassroom" onclick="switchViewMode('classroom')">
+                                <i class="fas fa-door-open"></i> Classrooms
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 0; overflow-x: auto;">
+                    <div id="timetableGridWrapper" style="position: relative; max-height: 70vh; overflow: auto;">
+                        <div id="timetableGrid" style="min-width: 100%;">
+                            <!-- Grid will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-lock"></i> Generate Timetable</h3>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning" style="padding: 16px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+            <i class="fas fa-exclamation-triangle"></i> Only Registrar can generate timetables. Please contact your registrar to generate a timetable.
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Setup Data Tab Content -->
+<div class="content-card" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-tools"></i> Timetable Setup & Reference Data</h3>
+    </div>
+    <div class="card-body">
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="stat-card" style="padding: 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 24px; color: var(--primary-color);">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;">{{ days_count }}</div>
+                        <div style="color: var(--text-secondary); font-size: 14px;">Timetable Days</div>
+                    </div>
+                </div>
+                <a href="{% url 'timetable:manage_days' %}" class="btn btn-sm btn-secondary" style="margin-top: 12px; width: 100%;">
+                    <i class="fas fa-edit"></i> Manage Days
+                </a>
+            </div>
+            
+            <div class="stat-card" style="padding: 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 24px; color: var(--primary-color);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;">{{ time_slots_count }}</div>
+                        <div style="color: var(--text-secondary); font-size: 14px;">Time Slots</div>
+                    </div>
+                </div>
+                <a href="{% url 'timetable:manage_time_slots' %}" class="btn btn-sm btn-secondary" style="margin-top: 12px; width: 100%;">
+                    <i class="fas fa-edit"></i> Manage Time Slots
+                </a>
+            </div>
+            
+            <div class="stat-card" style="padding: 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 24px; color: var(--primary-color);">
+                        <i class="fas fa-door-open"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;">{{ classrooms_count }}</div>
+                        <div style="color: var(--text-secondary); font-size: 14px;">Classrooms</div>
+                    </div>
+                </div>
+                <a href="{% url 'timetable:manage_classrooms' %}" class="btn btn-sm btn-secondary" style="margin-top: 12px; width: 100%;">
+                    <i class="fas fa-edit"></i> Manage Classrooms
+                </a>
+            </div>
+        </div>
+        
+        {% if not is_registrar %}
+        <div class="alert alert-info" style="padding: 12px; background: var(--light-color); border-left: 4px solid var(--info-color); border-radius: 4px; margin-bottom: 16px;">
+            <i class="fas fa-info-circle"></i> Only Registrar can add or edit reference data. You can view the current setup.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="content-card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-list"></i> Timetable Runs</h3>
+    </div>
+    <div class="card-body">
+        {% if timetable_runs %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Academic Year</th>
+                        <th>Semester</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Generated</th>
+                        <th>Published</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in timetable_runs %}
+                    <tr>
+                        <td>{{ run.course.name|default:"General" }}</td>
+                        <td>{{ run.academic_year }}</td>
+                        <td>{{ run.semester }}</td>
+                        <td>
+                            <span class="badge badge-{% if run.status == 'published' %}success{% elif run.status == 'generated' %}info{% else %}warning{% endif %}">
+                                {{ run.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ run.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ run.generated_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                        <td>{{ run.published_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                        <td>
+                            {% if run.status == 'generated' %}
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <a href="{% url 'timetable:deploy_timetable' run.id %}" class="btn btn-sm btn-success"
+                                   onclick="return confirm('Deploy this timetable? It will be published and locked from editing.')">
+                                    <i class="fas fa-rocket"></i> Deploy
+                                </a>
+                            </div>
+                            {% elif run.status == 'published' %}
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <span class="badge badge-success">Published</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No timetable runs yet. Generate a timetable to get started.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<script>
+let currentRunId = null;
+let currentViewMode = 'course';
+let currentGridData = null;
+let selectedEntryId = null;
+let days = [];
+let timeSlots = [];
+let courses = [];
+let lecturers = [];
+let classrooms = [];
+
+// Helper function to get CSRF token
+function getCSRFToken() {
+    // Try to get from hidden input
+    const tokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (tokenInput) {
+        return tokenInput.value;
+    }
+    
+    // Try to get from cookie
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Initialize grid on page load
+document.addEventListener('DOMContentLoaded', function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab') === 'generate') {
+        loadGridData();
+    }
+});
+
+// Load grid data (empty grid before generation)
+function loadGridData() {
+    fetch('{% url "timetable:api_grid_init" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                days = data.days;
+                timeSlots = data.time_slots;
+                courses = data.courses || [];
+                lecturers = data.lecturers || [];
+                classrooms = data.classrooms || [];
+                
+                // Check if there's an active timetable (generated or published)
+                if (data.active_run) {
+                    currentRunId = data.active_run.id;
+                    updateDeployButton(data.active_run.status);
+                    loadTimetableGrid(data.active_run.id);
+                } else {
+                    updateDeployButton(null);
+                    renderEmptyGrid();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading grid data:', error);
+            renderEmptyGrid();
+        });
+}
+
+// Render empty grid
+function renderEmptyGrid() {
+    const grid = document.getElementById('timetableGrid');
+    let html = '<table class="timetable-grid-table" style="width: 100%; border-collapse: collapse;">';
+    
+    // Header row with days
+    html += '<thead><tr><th class="grid-row-header" style="position: sticky; left: 0; z-index: 10; background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; min-width: 150px;">Row</th>';
+    for (const day of days) {
+        html += `<th class="grid-day-header" style="border: 1px solid var(--border-color); padding: 12px; background: var(--primary-color); color: white; min-width: 120px; position: sticky; top: 0; z-index: 9;">${day.name}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+    
+    // Empty rows based on view mode
+    let rows = [];
+    if (currentViewMode === 'course') {
+        rows = courses;
+    } else if (currentViewMode === 'lecturer') {
+        rows = lecturers;
+    } else {
+        rows = classrooms;
+    }
+    
+    if (rows.length === 0) {
+        html += '<tr><td colspan="' + (days.length + 1) + '" style="text-align: center; padding: 40px; color: var(--text-secondary);">No courses/lecturers available. Grid will populate after generation.</td></tr>';
+    } else {
+        for (const row of rows) {
+            html += `<tr><td class="grid-row-header" style="position: sticky; left: 0; z-index: 8; background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; font-weight: bold;">${row.label || row.name}</td>`;
+            
+            for (const day of days) {
+                html += '<td class="grid-cell empty-cell" style="border: 1px solid var(--border-color); padding: 4px; min-height: 200px; vertical-align: top; position: relative;">';
+                
+                // Show time slots
+                for (const timeSlot of timeSlots) {
+                    html += `<div class="time-slot-container" style="min-height: 50px; border-bottom: 1px dashed var(--border-color); padding: 2px 0;">`;
+                    html += `<div style="font-size: 10px; color: var(--text-secondary); padding: 2px 4px;">${timeSlot.start} - ${timeSlot.end}</div>`;
+                    html += '<div style="min-height: 30px;"></div>';
+                    html += '</div>';
+                }
+                
+                html += '</td>';
+            }
+            html += '</tr>';
+        }
+    }
+    
+    html += '</tbody></table>';
+    grid.innerHTML = html;
+}
+
+// Load timetable grid with data
+function loadTimetableGrid(runId) {
+    currentRunId = runId;
+    fetch(`/timetable/api/run/${runId}/grid-data/?mode=${currentViewMode}`)
+        .then(response => response.json())
+        .then(data => {
+        if (data.success) {
+            currentGridData = data.data;
+            updateDeployButton(data.data.status);
+            renderGrid(data.data);
+        }
+    });
+}
+
+// Render grid with entries
+function renderGrid(data) {
+    const grid = document.getElementById('timetableGrid');
+    let html = '<table class="timetable-grid-table" style="width: 100%; border-collapse: collapse;">';
+    
+    // Header row with days
+    html += '<thead><tr><th class="grid-row-header" style="position: sticky; left: 0; z-index: 10; background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; min-width: 150px;">Row</th>';
+    for (const day of data.days) {
+        html += `<th class="grid-day-header" style="border: 1px solid var(--border-color); padding: 12px; background: var(--primary-color); color: white; min-width: 120px; position: sticky; top: 0; z-index: 9;">${day.name}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+    
+    // Allow editing for registrars even when published, otherwise only when generated
+    const isRegistrar = {% if is_registrar %}true{% else %}false{% endif %};
+    const isEditable = data.status === 'generated' || (data.status === 'published' && isRegistrar);
+    
+    // Rows (courses or lecturers)
+    for (const row of data.rows) {
+        html += `<tr><td class="grid-row-header" style="position: sticky; left: 0; z-index: 8; background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; font-weight: bold;">${row.label}</td>`;
+        
+        for (const day of data.days) {
+            const entryIds = row.day_entries[day.id] || [];
+            html += `<td class="grid-cell ${isEditable ? 'editable-cell' : ''}" 
+                data-day-id="${day.id}"
+                style="border: 1px solid var(--border-color); padding: 4px; min-height: 200px; vertical-align: top; position: relative;">`;
+            
+            // Group entries by time slot
+            const entriesByTimeSlot = {};
+            for (const entryId of entryIds) {
+                const entry = data.entries[entryId];
+                if (entry) {
+                    const tsId = entry.time_slot_id;
+                    if (!entriesByTimeSlot[tsId]) {
+                        entriesByTimeSlot[tsId] = [];
+                    }
+                    entriesByTimeSlot[tsId].push(entry);
+                }
+            }
+            
+            // Render time slots with entries
+            for (const timeSlot of data.all_time_slots) {
+                const tsEntries = entriesByTimeSlot[timeSlot.id] || [];
+                html += `<div class="time-slot-container" data-time-slot-id="${timeSlot.id}" style="min-height: 50px; border-bottom: 1px dashed var(--border-color); padding: 2px 0;">`;
+                html += `<div style="font-size: 10px; color: var(--text-secondary); padding: 2px 4px;">${timeSlot.start} - ${timeSlot.end}</div>`;
+                
+                if (tsEntries.length > 0) {
+                    for (const entry of tsEntries) {
+                        const color = getUnitColor(entry.unit_code);
+                        const isSelected = selectedEntryId === entry.id;
+                        const tooltip = `${entry.time_slot_start} - ${entry.time_slot_end} | ${entry.classroom_name} | ${entry.lecturer_name}`;
+                        html += `<div class="timetable-slot ${isSelected ? 'selected' : ''}" 
+                            data-entry-id="${entry.id}"
+                            data-day-id="${entry.day_id}"
+                            data-time-slot-id="${entry.time_slot_id}"
+                            style="background: ${color}; padding: 6px; margin: 2px 0; border-radius: 4px; cursor: ${isEditable ? 'pointer' : 'default'}; font-size: 12px; ${isSelected ? 'border: 2px solid var(--primary-color); box-shadow: 0 0 8px rgba(0,123,255,0.5);' : ''}"
+                            ${isEditable ? `onclick="handleEntryClick(event, ${entry.id})"` : ''}
+                            title="${tooltip}">
+                            <strong>${entry.unit_code}</strong>
+                            <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">${entry.time_slot_start}-${entry.time_slot_end}</div>
+                        </div>`;
+                    }
+                } else if (isEditable) {
+                    // Empty time slot - clickable for placement
+                    html += `<div class="empty-time-slot" 
+                        data-day-id="${day.id}"
+                        data-time-slot-id="${timeSlot.id}"
+                        style="min-height: 30px; cursor: pointer; border: 1px dashed transparent; border-radius: 4px; transition: all 0.2s;"
+                        onclick="handleEmptySlotClick(${day.id}, ${timeSlot.id}, this)"
+                        onmouseenter="this.style.borderColor='var(--primary-color)'; this.style.backgroundColor='var(--light-color)'"
+                        onmouseleave="this.style.borderColor='transparent'; this.style.backgroundColor=''"
+                        title="Click to place selected unit here"></div>`;
+                }
+                
+                html += '</div>';
+            }
+            
+            html += '</td>';
+        }
+        html += '</tr>';
+    }
+    
+    html += '</tbody></table>';
+    grid.innerHTML = html;
+}
+
+// Color generator for units
+function getUnitColor(unitCode) {
+    let hash = 0;
+    for (let i = 0; i < unitCode.length; i++) {
+        hash = unitCode.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 70%, 85%)`;
+}
+
+// Handle entry click (select for placement)
+function handleEntryClick(event, entryId) {
+    event.stopPropagation();
+    
+    if (!currentGridData || currentGridData.status !== 'generated') return;
+    
+    // Select entry (removes from current position visually, marks for placement)
+    selectedEntryId = entryId;
+    
+    // Re-render to show selection and remove from current cell
+    renderGrid(currentGridData);
+    
+    // Show message
+    showRecommendations(['Unit selected. Click an empty time slot to place it.'], 'info');
+}
+
+// Handle empty slot click (place selected entry)
+function handleEmptySlotClick(dayId, timeSlotId, slotElement) {
+    if (!selectedEntryId || !currentGridData || currentGridData.status !== 'generated') return;
+    
+    const entry = currentGridData.entries[selectedEntryId];
+    if (!entry) return;
+    
+    // Move entry via API
+    moveEntry(selectedEntryId, dayId, timeSlotId, slotElement);
+}
+
+// Move entry to new position
+function moveEntry(entryId, newDayId, newTimeSlotId, targetElement) {
+    const entry = currentGridData.entries[entryId];
+    if (!entry) return;
+    
+    // Validate conflicts before placing
+    const formData = new FormData();
+    formData.append('day_id', newDayId);
+    formData.append('time_slot_id', newTimeSlotId);
+    formData.append('classroom_id', entry.classroom_id || '');
+    formData.append('lecturer_id', entry.lecturer_id || '');
+    
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        showInlineError(targetElement, 'CSRF token not found. Please refresh the page.');
+        return;
+    }
+    
+    fetch(`/timetable/api/entry/${entryId}/edit/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            selectedEntryId = null;
+            showRecommendations(['Unit moved successfully.'], 'success');
+            // Reload grid
+            loadTimetableGrid(currentRunId);
+        } else {
+            // Show inline error
+            showInlineError(targetElement, data.error || 'Failed to move entry', data.conflicts);
+            selectedEntryId = null;
+            renderGrid(currentGridData);
+        }
+    })
+    .catch(error => {
+        showInlineError(targetElement, 'Error: ' + error.message);
+        selectedEntryId = null;
+        renderGrid(currentGridData);
+    });
+}
+
+// Show inline error message
+function showInlineError(element, message, conflicts) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'inline-error';
+    errorDiv.style.cssText = 'background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin: 4px 0; font-size: 12px;';
+    errorDiv.innerHTML = `<strong>Error:</strong> ${message}`;
+    if (conflicts && conflicts.length > 0) {
+        errorDiv.innerHTML += '<br><strong>Conflicts:</strong> ' + conflicts.join(', ');
+    }
+    
+    element.appendChild(errorDiv);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+        errorDiv.remove();
+    }, 5000);
+}
+
+// Switch view mode
+function switchViewMode(mode) {
+    currentViewMode = mode;
+    
+    // Update button states
+    document.getElementById('viewModeCourse').className = mode === 'course' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    document.getElementById('viewModeLecturer').className = mode === 'lecturer' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    document.getElementById('viewModeClassroom').className = mode === 'classroom' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    
+    if (currentRunId) {
+        loadTimetableGrid(currentRunId);
+    } else {
+        renderEmptyGrid();
+    }
+}
+
+// Generate new timetable
+function generateNewTimetable() {
+    if (!confirm('Generate timetable for all eligible courses? This will create a new timetable run.')) {
+        return;
+    }
+    
+    const btn = document.getElementById('generateNewBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    
+    const formData = new FormData();
+    formData.append('action', 'generate');
+    
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic"></i> Generate New';
+        showRecommendations(['CSRF token not found. Please refresh the page.'], 'error');
+        return;
+    }
+    
+    fetch('{% url "timetable:generate_timetable" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic"></i> Generate New';
+        
+        if (data.success) {
+            // Show success message
+            showRecommendations([data.message], 'success');
+            // Update deploy button state
+            updateDeployButton('generated');
+            // Reload grid
+            setTimeout(() => {
+                loadGridData();
+            }, 1000);
+        } else {
+            // Show errors and recommendations
+            const messages = [data.message];
+            if (data.errors) messages.push(...data.errors);
+            showRecommendations(messages, 'error');
+            if (data.recommendations) {
+                showRecommendations(data.recommendations, 'info');
+            }
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-magic"></i> Generate New';
+            showRecommendations(['Error: ' + error.message], 'error');
+    });
+}
+
+// Update deploy button state
+function updateDeployButton(status) {
+    const deployBtn = document.getElementById('deployBtn');
+    const generateBtn = document.getElementById('generateNewBtn');
+    
+    if (status === 'generated') {
+        deployBtn.style.display = 'inline-flex';
+        deployBtn.disabled = false;
+        generateBtn.disabled = false;
+    } else if (status === 'published') {
+        deployBtn.style.display = 'none';
+        deployBtn.disabled = true;
+        // Allow generating new timetables even when one is published
+        generateBtn.disabled = false;
+    } else {
+        deployBtn.style.display = 'none';
+        deployBtn.disabled = true;
+        generateBtn.disabled = false;
+    }
+}
+
+// Deploy timetable
+function deployTimetable() {
+    if (!currentRunId) {
+        showRecommendations(['No timetable to deploy.'], 'error');
+        return;
+    }
+    
+    if (!confirm('Deploy this timetable? It will be published and locked from editing. It will be visible in General Timetable and Course-Specific Timetable views.')) {
+        return;
+    }
+    
+    const btn = document.getElementById('deployBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deploying...';
+    
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-rocket"></i> Deploy Timetable';
+        showRecommendations(['CSRF token not found. Please refresh the page.'], 'error');
+        return;
+    }
+    
+    fetch(`/timetable/deploy/${currentRunId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showRecommendations([data.message], 'success');
+            updateDeployButton('published');
+            // Disable generate button
+            document.getElementById('generateNewBtn').disabled = true;
+            // Reload grid to show read-only state
+            setTimeout(() => {
+                loadGridData();
+            }, 1000);
+        } else {
+            throw new Error(data.error || 'Failed to deploy timetable');
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-rocket"></i> Deploy Timetable';
+        showRecommendations(['Error: ' + error.message], 'error');
+    });
+}
+
+// Show recommendations/errors
+function showRecommendations(messages, type) {
+    const container = document.getElementById('recommendationsContainer');
+    container.style.display = 'block';
+    
+    const alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : 'alert-info';
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    container.innerHTML = `<div class="alert ${alertClass}" style="padding: 12px; border-radius: 4px; border-left: 4px solid;">
+        <i class="fas ${icon}"></i> ${messages.join('<br>')}
+    </div>`;
+    
+    // Auto-hide after 10 seconds for success
+    if (type === 'success') {
+        setTimeout(() => {
+            container.style.display = 'none';
+        }, 10000);
+    }
+}
+</script>
+
+<style>
+.timetable-grid-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.timetable-grid-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.grid-row-header {
+    position: sticky;
+    left: 0;
+    z-index: 8;
+    background: var(--bg-card);
+    font-weight: bold;
+    min-width: 150px;
+}
+
+.grid-day-header {
+    position: sticky;
+    top: 0;
+    z-index: 9;
+    background: var(--primary-color);
+    color: white;
+    text-align: center;
+    min-width: 120px;
+}
+
+.grid-cell {
+    min-height: 60px;
+    vertical-align: top;
+    position: relative;
+    padding: 4px;
+}
+
+.grid-cell.editable-cell:hover {
+    background: var(--light-color);
+}
+
+.timetable-slot {
+    padding: 6px;
+    margin: 2px 0;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.timetable-slot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.timetable-slot.selected {
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 8px rgba(0,123,255,0.5);
+}
+
+.alert-success {
+    background: #d4edda;
+    border-left-color: #28a745;
+    color: #155724;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    border-left-color: #17a2b8;
+    color: #0c5460;
+}
+</style>
+{% endblock %}

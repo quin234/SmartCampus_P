@@ -1,0 +1,81 @@
+{% extends 'timetable/base.html' %}
+{% load static %}
+
+{% block title %}Manage Classrooms - SmartCampus{% endblock %}
+
+{% block timetable_content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-door-open"></i> Manage Classrooms</h3>
+        <a href="{% url 'timetable:generate_timetable' %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Generate Timetable
+        </a>
+    </div>
+    <div class="card-body">
+        {% if is_registrar %}
+        <div class="form-section" style="margin-bottom: 24px; padding: 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+            <h4 style="margin-bottom: 16px;"><i class="fas fa-plus"></i> Add New Classroom</h4>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="add" value="1">
+                <div class="form-group">
+                    <label for="id_name">Classroom Name</label>
+                    {{ form.name }}
+                </div>
+                <div class="form-group">
+                    <label for="id_capacity">Capacity</label>
+                    {{ form.capacity }}
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Classroom
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="alert alert-info" style="padding: 12px; background: var(--light-color); border-left: 4px solid var(--info-color); border-radius: 4px; margin-bottom: 16px;">
+            <i class="fas fa-info-circle"></i> Only Registrar can add or edit classrooms. You can view the current list.
+        </div>
+        {% endif %}
+        
+        <h4 style="margin-bottom: 16px;"><i class="fas fa-list"></i> Existing Classrooms ({{ classrooms.count }})</h4>
+        {% if classrooms %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Capacity</th>
+                        {% if is_registrar %}
+                        <th>Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for classroom in classrooms %}
+                    <tr>
+                        <td>{{ classroom.name }}</td>
+                        <td>{{ classroom.capacity }}</td>
+                        {% if is_registrar %}
+                        <td>
+                            <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this classroom?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete" value="1">
+                                <input type="hidden" name="classroom_id" value="{{ classroom.id }}">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No classrooms added yet. {% if is_registrar %}Add your first classroom above.{% endif %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

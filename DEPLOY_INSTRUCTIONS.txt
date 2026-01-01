@@ -1,0 +1,188 @@
+================================================================================
+SMARTCAMPUS PRODUCTION DEPLOYMENT - QUICK START GUIDE
+================================================================================
+
+This folder contains all files needed for production deployment to your VPS.
+
+IMPORTANT: Before deploying, make sure you have:
+1. Linux VPS (Ubuntu 20.04+ recommended)
+2. Root or sudo access
+3. Domain name configured (optional but recommended)
+4. MySQL database created
+
+================================================================================
+STEP 1: UPLOAD TO VPS
+================================================================================
+
+Upload this entire SmartCampus_P folder to your VPS at:
+/var/www/smartcampus
+
+You can use:
+- SCP: scp -r SmartCampus_P/* user@vps-ip:/var/www/smartcampus/
+- SFTP: Use FileZilla or WinSCP
+- Git: Clone your repository on the VPS
+
+================================================================================
+STEP 2: CREATE APPLICATION USER
+================================================================================
+
+sudo adduser --system --group --home /var/www/smartcampus smartcampus
+sudo chown -R smartcampus:smartcampus /var/www/smartcampus
+
+================================================================================
+STEP 3: SET UP PYTHON ENVIRONMENT
+================================================================================
+
+cd /var/www/smartcampus
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+
+================================================================================
+STEP 4: CONFIGURE ENVIRONMENT VARIABLES
+================================================================================
+
+cp env.example .env
+nano .env
+
+IMPORTANT: Update these values in .env:
+- SECRET_KEY (generate with: python manage.py shell -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())")
+- DEBUG=False
+- ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+- DB_NAME, DB_USER, DB_PASSWORD (your MySQL credentials)
+- BASE_URL=https://yourdomain.com
+- STATIC_ROOT and MEDIA_ROOT paths
+- REDIS_URL (if using Redis)
+
+================================================================================
+STEP 5: CREATE DATABASE
+================================================================================
+
+sudo mysql -u root -p
+
+CREATE DATABASE smartcampus CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'smartcampus_user'@'localhost' IDENTIFIED BY 'your-secure-password';
+GRANT ALL PRIVILEGES ON smartcampus.* TO 'smartcampus_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+
+Update .env with these database credentials.
+
+================================================================================
+STEP 6: RUN MIGRATIONS
+================================================================================
+
+source venv/bin/activate
+python manage.py migrate
+python manage.py collectstatic --noinput
+python manage.py createsuperuser
+
+================================================================================
+STEP 7: CREATE REQUIRED DIRECTORIES
+================================================================================
+
+sudo mkdir -p /var/log/smartcampus
+sudo mkdir -p /var/log/gunicorn
+sudo mkdir -p /var/run/gunicorn
+sudo mkdir -p /var/www/smartcampus/staticfiles
+sudo mkdir -p /var/www/smartcampus/media
+
+sudo chown -R smartcampus:smartcampus /var/log/smartcampus
+sudo chown -R smartcampus:smartcampus /var/log/gunicorn
+sudo chown -R smartcampus:smartcampus /var/run/gunicorn
+sudo chown -R smartcampus:smartcampus /var/www/smartcampus
+
+================================================================================
+STEP 8: INSTALL AND CONFIGURE GUNICORN
+================================================================================
+
+# Update gunicorn_config.py paths if needed
+# Update smartcampus.service paths if needed
+
+sudo cp smartcampus.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable smartcampus
+sudo systemctl start smartcampus
+sudo systemctl status smartcampus
+
+================================================================================
+STEP 9: INSTALL AND CONFIGURE NGINX
+================================================================================
+
+# Update nginx.conf with your domain name
+sudo nano nginx.conf
+
+sudo cp nginx.conf /etc/nginx/sites-available/smartcampus
+sudo ln -s /etc/nginx/sites-available/smartcampus /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default  # Optional
+
+sudo nginx -t
+sudo systemctl reload nginx
+
+================================================================================
+STEP 10: INSTALL SSL CERTIFICATE (RECOMMENDED)
+================================================================================
+
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+
+================================================================================
+STEP 11: INSTALL AND START REDIS (FOR CACHING)
+================================================================================
+
+sudo apt install -y redis-server
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
+
+# If you set a Redis password, update REDIS_URL in .env:
+# REDIS_URL=redis://:password@127.0.0.1:6379/1
+
+================================================================================
+VERIFICATION
+================================================================================
+
+1. Check Gunicorn: sudo systemctl status smartcampus
+2. Check Nginx: sudo systemctl status nginx
+3. Check Redis: sudo systemctl status redis-server
+4. Visit your domain in browser
+5. Check logs:
+   - Application: tail -f /var/log/smartcampus/django.log
+   - Gunicorn: tail -f /var/log/gunicorn/smartcampus_error.log
+   - Nginx: tail -f /var/log/nginx/smartcampus_error.log
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+If you get 502 Bad Gateway:
+- Check Gunicorn is running: sudo systemctl status smartcampus
+- Check socket permissions: ls -la /var/run/gunicorn/smartcampus.sock
+- Check logs: sudo journalctl -u smartcampus -n 50
+
+If static files don't load:
+- Run: python manage.py collectstatic --noinput
+- Check STATIC_ROOT in .env matches nginx.conf
+
+If database connection fails:
+- Verify credentials in .env
+- Test: mysql -u smartcampus_user -p smartcampus
+- Check MySQL is running: sudo systemctl status mysql
+
+================================================================================
+FILES TO UPDATE BEFORE DEPLOYMENT
+================================================================================
+
+1. nginx.conf - Update server_name with your domain
+2. .env - Fill in all environment variables
+3. gunicorn_config.py - Verify paths (usually fine as-is)
+4. smartcampus.service - Verify paths (usually fine as-is)
+
+================================================================================
+FOR DETAILED INSTRUCTIONS
+================================================================================
+
+See DEPLOYMENT.md for complete step-by-step guide with explanations.
+
+================================================================================
+

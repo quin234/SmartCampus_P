@@ -1,0 +1,376 @@
+{% extends 'superadmin/base.html' %}
+{% load static %}
+
+{% block title %}Academic Management - Super Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Academic Management</h1>
+    <p class="page-subtitle">Create and manage global units and global courses</p>
+</div>
+
+<div class="academic-management">
+    <!-- Global Units Section -->
+    <div class="academic-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-book"></i>
+                Global Units
+            </h2>
+            <button class="btn-primary" id="btn-create-unit" onclick="showUnitForm()">
+                <i class="fas fa-plus"></i> Create Global Unit
+            </button>
+        </div>
+        
+        <!-- Create Unit Form -->
+        <div class="form-card" id="unit-form-card" style="display: none;">
+            <form method="POST" action="{% url 'superadmin:academic' %}" id="unit-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_global_unit">
+                <div class="form-group">
+                    <label for="unit-code" class="form-label">Unit Code <span class="required">*</span></label>
+                    <input type="text" id="unit-code" name="code" class="form-control" 
+                           placeholder="e.g., CS101" required maxlength="50">
+                    <small class="form-text">Enter a unique unit code (e.g., CS101, MATH201)</small>
+                </div>
+                <div class="form-group">
+                    <label for="unit-name" class="form-label">Unit Name <span class="required">*</span></label>
+                    <input type="text" id="unit-name" name="name" class="form-control" 
+                           placeholder="e.g., Introduction to Computer Science" required maxlength="200">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="hideUnitForm()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Unit</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Global Units List -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if global_units %}
+                        {% for unit in global_units %}
+                        <tr>
+                            <td><strong>{{ unit.code }}</strong></td>
+                            <td>{{ unit.name }}</td>
+                            <td>{{ unit.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="3" class="empty-state">No global units created yet.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Global Courses Section -->
+    <div class="academic-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-graduation-cap"></i>
+                Global Courses
+            </h2>
+            <button class="btn-primary" id="btn-create-course" onclick="showCourseForm()">
+                <i class="fas fa-plus"></i> Create Global Course
+            </button>
+        </div>
+        
+        <!-- Create Course Form -->
+        <div class="form-card" id="course-form-card" style="display: none;">
+            <form method="POST" action="{% url 'superadmin:academic' %}" id="course-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_global_course">
+                <div class="form-group">
+                    <label for="course-name" class="form-label">Course Name <span class="required">*</span></label>
+                    <input type="text" id="course-name" name="name" class="form-control" 
+                           placeholder="e.g., Information Technology" required maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label for="course-level" class="form-label">Level <span class="required">*</span></label>
+                    <select id="course-level" name="level" class="form-control" required>
+                        <option value="">Select Level</option>
+                        {% for value, label in level_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="course-category" class="form-label">Category <span class="required">*</span></label>
+                    <input type="text" id="course-category" name="category" class="form-control" 
+                           placeholder="e.g., Technology, Business, Health Sciences" required maxlength="100">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="hideCourseForm()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Course</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Global Courses List -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Level</th>
+                        <th>Category</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if global_courses %}
+                        {% for course in global_courses %}
+                        <tr>
+                            <td><strong>{{ course.name }}</strong></td>
+                            <td><span class="badge badge-info">{{ course.get_level_display }}</span></td>
+                            <td>{{ course.category }}</td>
+                            <td>{{ course.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="empty-state">No global courses created yet.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.academic-management {
+    padding: 0;
+}
+
+.academic-section {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: var(--primary);
+}
+
+.form-card {
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+
+.required {
+    color: var(--danger);
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+    background: var(--bg-primary);
+    color: var(--text);
+    transition: border-color 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-text {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.btn-primary {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-secondary {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
+}
+
+.table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead {
+    background: var(--bg-secondary);
+}
+
+.data-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+}
+
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-info {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--primary-light);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showUnitForm() {
+    document.getElementById('unit-form-card').style.display = 'block';
+    document.getElementById('btn-create-unit').style.display = 'none';
+    document.getElementById('unit-code').focus();
+}
+
+function hideUnitForm() {
+    document.getElementById('unit-form-card').style.display = 'none';
+    document.getElementById('btn-create-unit').style.display = 'inline-flex';
+    document.getElementById('unit-form').reset();
+}
+
+function showCourseForm() {
+    document.getElementById('course-form-card').style.display = 'block';
+    document.getElementById('btn-create-course').style.display = 'none';
+    document.getElementById('course-name').focus();
+}
+
+function hideCourseForm() {
+    document.getElementById('course-form-card').style.display = 'none';
+    document.getElementById('btn-create-course').style.display = 'inline-flex';
+    document.getElementById('course-form').reset();
+}
+
+// Auto-uppercase unit code
+document.addEventListener('DOMContentLoaded', function() {
+    const unitCodeInput = document.getElementById('unit-code');
+    if (unitCodeInput) {
+        unitCodeInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+});
+</script>
+{% endblock %}
+
+
+

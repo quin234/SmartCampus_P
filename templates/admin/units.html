@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Units - SmartCampus</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin/admin.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="college-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>{{ college.name }}</span>
+            </div>
+            <div class="navbar-actions">
+                <a href="{% url 'college_landing' college_slug=college_slug %}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profile-btn">
+                        <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                        <span class="profile-name">Admin</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-menu" id="profile-menu">
+                        <a href="{% url 'logout' %}" class="profile-menu-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title"><i class="fas fa-book-open"></i> Units Management</h1>
+                <p class="page-subtitle">Manage course units</p>
+            </div>
+        </div>
+
+        <div class="filters-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search units...">
+            </div>
+            <div class="filter-group">
+                <label>Department:</label>
+                <select id="department-filter" class="form-input">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Course:</label>
+                <select id="course-filter" class="form-input">
+                    <option value="">All Courses</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list"></i> Units List</h3>
+                <span class="card-value" id="units-count">0 units</span>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="data-table" id="units-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Course</th>
+                                <th>Year</th>
+                                <th>Semester</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="units-tbody">
+                            <tr><td colspan="8" class="loading-row"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </main>
+
+    <button class="fab" id="fab-add-unit" title="Add New Unit">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <div class="modal" id="unit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Add New Unit</h2>
+                <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="unit-form">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Code <span class="required">*</span></label>
+                            <input type="text" id="unit-code" name="code" class="form-input" required>
+                            <span class="error-message" id="error-code"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Name <span class="required">*</span></label>
+                            <input type="text" id="unit-name" name="name" class="form-input" required>
+                            <span class="error-message" id="error-name"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Department <span class="required">*</span></label>
+                            <select id="unit-department" name="department" class="form-input" required>
+                                <option value="">Select Department</option>
+                            </select>
+                            <span class="error-message" id="error-department"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Course <span class="required">*</span></label>
+                            <select id="unit-course" name="course" class="form-input" required>
+                                <option value="">Select Department First</option>
+                            </select>
+                            <span class="error-message" id="error-course"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Year <span class="required">*</span></label>
+                            <select id="unit-year" name="year" class="form-input" required>
+                                <option value="">Select Year</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                            </select>
+                            <span class="error-message" id="error-year"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Semester <span class="required">*</span></label>
+                            <select id="unit-semester" name="semester" class="form-input" required>
+                                <option value="">Select Semester</option>
+                            </select>
+                            <span class="error-message" id="error-semester"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status <span class="required">*</span></label>
+                        <select id="unit-status" name="status" class="form-input" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <span class="error-message" id="error-status"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit">
+                        <span class="btn-text">Save Unit</span>
+                        <span class="btn-loader hidden"><i class="fas fa-spinner fa-spin"></i> Saving...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <div class="loading-overlay hidden" id="loading-overlay"><div class="spinner"></div></div>
+
+    <!-- College Slug for API calls -->
+    <script>
+        window.COLLEGE_SLUG = '{{ college_slug }}';
+        
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        window.csrftoken = getCookie('csrftoken');
+        
+        // Cache for semesters_per_year
+        let cachedSemestersPerYear = null;
+        
+        // Get semesters per year from settings
+        async function getSemestersPerYear() {
+            if (cachedSemestersPerYear) {
+                return cachedSemestersPerYear;
+            }
+            
+            if (!window.COLLEGE_SLUG) return 2;
+            
+            try {
+                const response = await fetch(`/api/${window.COLLEGE_SLUG}/admin/academic-settings/`, {
+                    headers: { 'X-CSRFToken': window.csrftoken }
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Error fetching academic settings:', data.error);
+                    return 2; // Default fallback
+                }
+                
+                cachedSemestersPerYear = data.semesters_per_year || 2;
+                return cachedSemestersPerYear;
+            } catch (error) {
+                console.error('Error fetching semesters per year:', error);
+                return 2; // Default fallback
+            }
+        }
+        
+        // Populate semester dropdown
+        async function populateSemesterDropdown() {
+            const select = document.getElementById('unit-semester');
+            if (!select) return;
+            
+            const maxSemesters = await getSemestersPerYear();
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">Select Semester</option>';
+            
+            for (let i = 1; i <= maxSemesters; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Semester ${i}`;
+                select.appendChild(option);
+            }
+            
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        }
+        
+        // Populate on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.COLLEGE_SLUG) {
+                populateSemesterDropdown();
+            }
+        });
+    </script>
+    <script src="{% static 'js/admin/common.js' %}"></script>
+    <script src="{% static 'js/admin/units.js' %}"></script>
+</body>
+</html>
+

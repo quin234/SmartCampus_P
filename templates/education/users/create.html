@@ -1,0 +1,62 @@
+{% extends 'education/base.html' %}
+
+{% block title %}Add Staff - SmartCampus{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-user-plus"></i> Add New Staff Member</h2>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Username *</label>
+            {{ form.username }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Email *</label>
+            {{ form.email }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">First Name</label>
+            {{ form.first_name }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Last Name</label>
+            {{ form.last_name }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Phone</label>
+            {{ form.phone }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Role *</label>
+            {{ form.role }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Password *</label>
+            {{ form.password }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Confirm Password *</label>
+            {{ form.password_confirm }}
+        </div>
+        
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Create User
+        </button>
+        <a href="{% url 'user_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </form>
+</div>
+{% endblock %}
+

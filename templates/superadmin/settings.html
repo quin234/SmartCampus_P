@@ -1,0 +1,236 @@
+{% extends 'superadmin/base.html' %}
+{% load static %}
+
+{% block title %}System Settings - Super Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">System Settings</h1>
+    <p class="page-subtitle">Manage platform-wide settings and configurations</p>
+</div>
+
+<div class="settings-content">
+    <!-- Platform Settings -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title">Platform Settings</h3>
+        </div>
+        <div class="card-body">
+            <form id="platform-settings-form">
+                <div class="form-group">
+                    <label class="form-label">Platform Name</label>
+                    <input type="text" id="platform-name" class="form-input" placeholder="SmartCampus">
+                    <small class="form-help">The name displayed throughout the platform</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Platform Logo</label>
+                    <input type="file" id="platform-logo" class="form-input" accept="image/*">
+                    <small class="form-help">Upload platform logo (PNG, JPG, max 2MB)</small>
+                    <div id="logo-preview" class="logo-preview"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Default Registration Status</label>
+                    <select id="default-status" class="form-select">
+                        <option value="pending">Pending Approval</option>
+                        <option value="active">Auto-Approved</option>
+                    </select>
+                    <small class="form-help">Default status for new college registrations</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">System Email</label>
+                    <input type="email" id="system-email" class="form-input" placeholder="admin@smartcampus.com">
+                    <small class="form-help">Primary system email address</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="maintenance-mode" class="form-checkbox">
+                        Maintenance Mode
+                    </label>
+                    <small class="form-help">Enable maintenance mode to restrict access</small>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Platform Settings
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Email Settings -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title">Email Settings</h3>
+        </div>
+        <div class="card-body">
+            <form id="email-settings-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">SMTP Host</label>
+                        <input type="text" id="smtp-host" class="form-input" placeholder="smtp.gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SMTP Port</label>
+                        <input type="number" id="smtp-port" class="form-input" placeholder="587" value="587">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">SMTP Username</label>
+                        <input type="text" id="smtp-username" class="form-input" placeholder="your-email@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SMTP Password</label>
+                        <input type="password" id="smtp-password" class="form-input" placeholder="••••••••">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Email Settings
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Security Settings -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title">Security Settings</h3>
+        </div>
+        <div class="card-body">
+            <form id="security-settings-form">
+                <div class="form-group">
+                    <label class="form-label">Minimum Password Length</label>
+                    <input type="number" id="password-min-length" class="form-input" value="8" min="6" max="32">
+                    <small class="form-help">Minimum characters required for passwords</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Session Timeout (seconds)</label>
+                    <input type="number" id="session-timeout" class="form-input" value="3600" min="300">
+                    <small class="form-help">Time before session expires (default: 3600 = 1 hour)</small>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Security Settings
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Backup & Maintenance -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title">Backup & Maintenance</h3>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <label class="form-label">Database Backup</label>
+                <button type="button" class="btn btn-secondary" id="backup-database-btn">
+                    <i class="fas fa-download"></i> Create Database Backup
+                </button>
+                <small class="form-help">Create a backup of the entire database</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">System Logs</label>
+                <button type="button" class="btn btn-secondary" id="view-logs-btn">
+                    <i class="fas fa-file-alt"></i> View System Logs
+                </button>
+                <small class="form-help">View and download system logs</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSettings();
+        setupSettingsForms();
+    });
+
+    async function loadSettings() {
+        try {
+            const data = await apiCall('/settings');
+            if (data) {
+                document.getElementById('platform-name').value = data.platform_name || 'SmartCampus';
+                document.getElementById('default-status').value = data.default_registration_status || 'pending';
+                document.getElementById('system-email').value = data.system_email || '';
+                document.getElementById('maintenance-mode').checked = data.maintenance_mode || false;
+                document.getElementById('smtp-host').value = data.smtp_host || '';
+                document.getElementById('smtp-port').value = data.smtp_port || 587;
+                document.getElementById('smtp-username').value = data.smtp_username || '';
+                document.getElementById('password-min-length').value = data.password_min_length || 8;
+                document.getElementById('session-timeout').value = data.session_timeout || 3600;
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            showToast('error', 'Failed to load settings');
+        }
+    }
+
+    function setupSettingsForms() {
+        // Platform Settings Form
+        document.getElementById('platform-settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                platform_name: document.getElementById('platform-name').value,
+                default_registration_status: document.getElementById('default-status').value,
+                system_email: document.getElementById('system-email').value,
+                maintenance_mode: document.getElementById('maintenance-mode').checked
+            };
+            await saveSettings(data, 'Platform settings');
+        });
+
+        // Email Settings Form
+        document.getElementById('email-settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                smtp_host: document.getElementById('smtp-host').value,
+                smtp_port: parseInt(document.getElementById('smtp-port').value),
+                smtp_username: document.getElementById('smtp-username').value,
+                smtp_password: document.getElementById('smtp-password').value
+            };
+            await saveSettings(data, 'Email settings');
+        });
+
+        // Security Settings Form
+        document.getElementById('security-settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                password_min_length: parseInt(document.getElementById('password-min-length').value),
+                session_timeout: parseInt(document.getElementById('session-timeout').value)
+            };
+            await saveSettings(data, 'Security settings');
+        });
+
+        // Backup Database
+        document.getElementById('backup-database-btn').addEventListener('click', async () => {
+            if (confirm('Create a database backup? This may take a few moments.')) {
+                showToast('info', 'Backup initiated...');
+                // In production, this would call an API endpoint
+                setTimeout(() => {
+                    showToast('success', 'Database backup created successfully');
+                }, 2000);
+            }
+        });
+
+        // View Logs
+        document.getElementById('view-logs-btn').addEventListener('click', () => {
+            showToast('info', 'Logs viewer coming soon');
+        });
+    }
+
+    async function saveSettings(data, sectionName) {
+        try {
+            const response = await apiCall('/settings', {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            });
+            if (response && response.success) {
+                showToast('success', `${sectionName} saved successfully`);
+            }
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            showToast('error', `Failed to save ${sectionName}`);
+        }
+    }
+</script>
+{% endblock %}

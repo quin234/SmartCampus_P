@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements - SmartCampus</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin/admin.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="college-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>{{ college.name }}</span>
+            </div>
+            <div class="navbar-actions">
+                <a href="{% url 'college_landing' college_slug=college.get_slug %}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profile-btn">
+                        <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                        <span class="profile-name">Admin</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-menu" id="profile-menu">
+                        <a href="{% url 'logout' %}" class="profile-menu-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title"><i class="fas fa-bullhorn"></i> Announcements Management</h1>
+                <p class="page-subtitle">Create and manage college announcements</p>
+            </div>
+        </div>
+
+        <div class="filters-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search announcements...">
+            </div>
+            <div class="filter-group">
+                <label>Target Type:</label>
+                <select id="target-type-filter" class="form-input">
+                    <option value="">All Types</option>
+                    <option value="all_students">All Students</option>
+                    <option value="all_lecturers">All Lecturers</option>
+                    <option value="individual">Individual</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Priority:</label>
+                <select id="priority-filter" class="form-input">
+                    <option value="">All Priorities</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status:</label>
+                <select id="status-filter" class="form-input">
+                    <option value="">All Status</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list"></i> Announcements List</h3>
+                <span class="card-value" id="announcements-count">0 announcements</span>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="data-table" id="announcements-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Target</th>
+                                <th>Priority</th>
+                                <th>Created By</th>
+                                <th>Created At</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="announcements-tbody">
+                            <tr><td colspan="7" class="loading-row"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </main>
+
+    <button class="fab" id="fab-add-announcement" title="Add New Announcement">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Announcement Modal -->
+    <div class="modal" id="announcement-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Create New Announcement</h2>
+                <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="announcement-form">
+                <div class="modal-body">
+                    <input type="hidden" id="announcement-id">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Title <span class="required">*</span></label>
+                        <input type="text" id="announcement-title" class="form-input" placeholder="Enter announcement title" required>
+                        <span class="field-error" id="title-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Content <span class="required">*</span></label>
+                        <textarea id="announcement-content" class="form-input" rows="6" placeholder="Enter announcement content" required></textarea>
+                        <span class="field-error" id="content-error"></span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Target Type <span class="required">*</span></label>
+                            <select id="announcement-target-type" class="form-input" required>
+                                <option value="">Select target type</option>
+                                <option value="all_students">All Students</option>
+                                <option value="all_lecturers">All Lecturers</option>
+                                <option value="individual">Individual Users</option>
+                            </select>
+                            <span class="field-error" id="target-type-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select id="announcement-priority" class="form-input">
+                                <option value="normal">Normal</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Individual Targeting Section -->
+                    <div id="individual-targeting-section" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Individual Targeting</label>
+                            <div class="tabs">
+                                <button type="button" class="tab-btn active" data-tab="students-tab">Students</button>
+                                <button type="button" class="tab-btn" data-tab="lecturers-tab">Lecturers</button>
+                            </div>
+                            
+                            <div class="tab-content active" id="students-tab">
+                                <div class="form-group">
+                                    <label class="form-label">Select Students</label>
+                                    <select id="announcement-targeted-students" class="form-input" multiple size="8">
+                                        <!-- Populated via JS -->
+                                    </select>
+                                    <small class="form-help">Hold Ctrl/Cmd to select multiple students</small>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-content" id="lecturers-tab">
+                                <div class="form-group">
+                                    <label class="form-label">Select Lecturers</label>
+                                    <select id="announcement-targeted-users" class="form-input" multiple size="8">
+                                        <!-- Populated via JS -->
+                                    </select>
+                                    <small class="form-help">Hold Ctrl/Cmd to select multiple lecturers</small>
+                                </div>
+                            </div>
+                            
+                            <div class="selected-count" id="selected-count">
+                                <span id="selected-students-count">0 students</span>, <span id="selected-lecturers-count">0 lecturers</span> selected
+                            </div>
+                            <span class="field-error" id="individual-targeting-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Expiration Date (Optional)</label>
+                        <input type="datetime-local" id="announcement-expires-at" class="form-input">
+                        <small class="form-help">Leave empty for no expiration</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit">Create Announcement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Announcement Modal -->
+    <div class="modal" id="view-announcement-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 class="modal-title" id="view-modal-title">Announcement Details</h2>
+                <button class="modal-close" id="view-modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="view-announcement-content">
+                <!-- Populated via JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="view-modal-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script src="{% static 'js/admin/common.js' %}"></script>
+    <script src="{% static 'js/admin/announcements.js' %}"></script>
+    <script>
+        // Set college slug for API calls
+        window.COLLEGE_SLUG = '{{ college.get_slug }}';
+        window.csrftoken = getCookie('csrftoken');
+    </script>
+</body>
+</html>
+

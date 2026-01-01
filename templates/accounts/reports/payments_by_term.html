@@ -1,0 +1,46 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Payments by Semester - Accounts{% endblock %}
+{% block icon %}chart-pie{% endblock %}
+{% block page_title %}Payments Summary by Semester{% endblock %}
+{% block page_subtitle %}Financial summary grouped by semester and academic year{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-pie"></i> Semester-wise Payment Summary</h3>
+    </div>
+    <div class="card-body">
+        {% if semester_data %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Semester</th>
+                            <th>Academic Year</th>
+                            <th>Total Paid</th>
+                            <th>Payment Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in semester_data %}
+                        <tr>
+                            <td><strong>Semester {{ item.semester_number }}</strong></td>
+                            <td>{{ item.academic_year }}</td>
+                            <td style="color: var(--success-color);">KES {{ item.total_paid|floatformat:2 }}</td>
+                            <td>{{ item.payment_count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-chart-pie"></i>
+                <p>No payment data available</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

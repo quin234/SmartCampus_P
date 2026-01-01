@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses - SmartCampus</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin/admin.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="college-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>{{ college.name }}</span>
+            </div>
+            <div class="navbar-actions">
+                <a href="{% url 'college_landing' college_slug=college_slug %}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profile-btn">
+                        <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                        <span class="profile-name">Admin</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-menu" id="profile-menu">
+                        <a href="{% url 'logout' %}" class="profile-menu-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title"><i class="fas fa-book"></i> Courses Management</h1>
+                <p class="page-subtitle">Manage college courses</p>
+            </div>
+        </div>
+
+        <div class="filters-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search courses...">
+            </div>
+            <div class="filter-group">
+                <label>Department:</label>
+                <select id="department-filter" class="form-input">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list"></i> Courses List</h3>
+                <span class="card-value" id="courses-count">0 courses</span>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="data-table" id="courses-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="courses-tbody">
+                            <tr><td colspan="6" class="loading-row"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </main>
+
+    <button class="fab" id="fab-add-course" title="Add New Course">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <div class="modal" id="course-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Add New Course</h2>
+                <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="course-form">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Code <span class="required">*</span></label>
+                            <input type="text" id="course-code" name="code" class="form-input" required>
+                            <span class="error-message" id="error-code"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Name <span class="required">*</span></label>
+                            <input type="text" id="course-name" name="name" class="form-input" required>
+                            <span class="error-message" id="error-name"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Department <span class="required">*</span></label>
+                            <select id="course-department" name="department" class="form-input" required>
+                                <option value="">Select Department</option>
+                            </select>
+                            <span class="error-message" id="error-department"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Duration (Years) <span class="required">*</span></label>
+                            <input type="number" id="course-duration" name="duration" class="form-input" min="1" max="10" required>
+                            <span class="error-message" id="error-duration"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status <span class="required">*</span></label>
+                        <select id="course-status" name="status" class="form-input" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <span class="error-message" id="error-status"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit">
+                        <span class="btn-text">Save Course</span>
+                        <span class="btn-loader hidden"><i class="fas fa-spinner fa-spin"></i> Saving...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <div class="loading-overlay hidden" id="loading-overlay"><div class="spinner"></div></div>
+
+    <!-- College Slug for API calls -->
+    <script>
+        window.COLLEGE_SLUG = '{{ college_slug }}';
+    </script>
+    <script src="{% static 'js/admin/common.js' %}"></script>
+    <script src="{% static 'js/admin/courses.js' %}"></script>
+</body>
+</html>
+

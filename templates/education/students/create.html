@@ -1,0 +1,182 @@
+{% extends 'education/base.html' %}
+
+{% block title %}Register Student - SmartCampus{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-user-graduate"></i> Register New Student</h2>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label class="form-label">Admission Number *</label>
+            {{ form.admission_number }}
+            {% if form.admission_number.errors %}
+                <div class="text-danger">{{ form.admission_number.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}
+                <div class="text-danger">{{ form.full_name.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Course</label>
+            {{ form.course }}
+            {% if form.course.errors %}
+                <div class="text-danger">{{ form.course.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Year of Study *</label>
+            {{ form.year_of_study }}
+            {% if form.year_of_study.errors %}
+                <div class="text-danger">{{ form.year_of_study.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Gender *</label>
+            {{ form.gender }}
+            {% if form.gender.errors %}
+                <div class="text-danger">{{ form.gender.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Date of Birth *</label>
+            {{ form.date_of_birth }}
+            {% if form.date_of_birth.errors %}
+                <div class="text-danger">{{ form.date_of_birth.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <div class="text-danger">{{ form.email.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Phone</label>
+            {{ form.phone }}
+            {% if form.phone.errors %}
+                <div class="text-danger">{{ form.phone.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Current Semester</label>
+            {{ form.current_semester }}
+            {% if form.current_semester.help_text %}
+                <small class="form-text text-muted">{{ form.current_semester.help_text }}</small>
+            {% endif %}
+            {% if form.current_semester.errors %}
+                <div class="text-danger">{{ form.current_semester.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <!-- Ream Paper Field -->
+        <div class="form-group">
+            <div class="form-check">
+                {{ form.has_ream_paper }}
+                <label class="form-check-label" for="{{ form.has_ream_paper.id_for_label }}">
+                    Has Ream Paper
+                </label>
+            </div>
+            {% if form.has_ream_paper.errors %}
+                <div class="text-danger">{{ form.has_ream_paper.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <!-- Scholarship/Sponsorship Fields -->
+        <div class="form-group">
+            <div class="form-check">
+                {{ form.is_sponsored }}
+                <label class="form-check-label" for="{{ form.is_sponsored.id_for_label }}">
+                    Is Sponsored/Scholarship
+                </label>
+            </div>
+            {% if form.is_sponsored.errors %}
+                <div class="text-danger">{{ form.is_sponsored.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div id="sponsorship-fields" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">Discount Type</label>
+                {{ form.sponsorship_discount_type }}
+                {% if form.sponsorship_discount_type.errors %}
+                    <div class="text-danger">{{ form.sponsorship_discount_type.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Discount Value</label>
+                {{ form.sponsorship_discount_value }}
+                <small class="form-text text-muted">Enter percentage (0-100) or fixed amount in KES</small>
+                {% if form.sponsorship_discount_value.errors %}
+                    <div class="text-danger">{{ form.sponsorship_discount_value.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            {{ form.status }}
+            {% if form.status.errors %}
+                <div class="text-danger">{{ form.status.errors }}</div>
+            {% endif %}
+        </div>
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Register Student
+        </button>
+        <a href="{% url 'student_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </form>
+</div>
+
+<script>
+    // Show/hide sponsorship fields based on checkbox
+    document.addEventListener('DOMContentLoaded', function() {
+        const sponsoredCheckbox = document.getElementById('{{ form.is_sponsored.id_for_label }}');
+        const sponsorshipFields = document.getElementById('sponsorship-fields');
+        
+        if (sponsoredCheckbox) {
+            // Function to toggle visibility
+            function toggleSponsorshipFields() {
+                if (sponsoredCheckbox.checked) {
+                    sponsorshipFields.style.display = 'block';
+                } else {
+                    sponsorshipFields.style.display = 'none';
+                }
+            }
+            
+            // Add event listener
+            sponsoredCheckbox.addEventListener('change', toggleSponsorshipFields);
+            
+            // Trigger on page load in case checkbox is already checked
+            toggleSponsorshipFields();
+        }
+    });
+</script>
+{% endblock %}
+

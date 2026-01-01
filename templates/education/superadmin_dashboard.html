@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Dashboard - SmartCampus</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin/superadmin.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="superadmin-dashboard">
+    <!-- Top Navigation Bar -->
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>SmartCampus</span>
+                </div>
+            </div>
+            <div class="navbar-right">
+                <div class="notifications">
+                    <button class="notification-btn" id="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-count">0</span>
+                    </button>
+                </div>
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profile-btn">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <span class="profile-name" id="admin-name">Super Admin</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="profile-menu">
+                        <a href="#" class="dropdown-item" data-action="profile">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                        <a href="#" class="dropdown-item" data-action="settings">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/logout/" class="dropdown-item" data-action="logout">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+            <ul class="nav-menu">
+                <li class="nav-item active" data-page="dashboard">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="colleges">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-school"></i>
+                        <span>Colleges</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="analytics">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="settings">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>System Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="profile">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item logout-item">
+                    <a href="/logout/" class="nav-link" id="sidebar-logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+        <!-- Dashboard Page -->
+        <div class="page-content" id="page-dashboard">
+            <div class="page-header">
+                <h1 class="page-title">Super Admin Dashboard</h1>
+                <p class="page-subtitle">System-wide overview and management</p>
+            </div>
+
+            <!-- Analytics Cards -->
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <div class="card-icon total-colleges">
+                        <i class="fas fa-school"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3 class="card-label">Total Colleges</h3>
+                        <p class="card-value" id="total-colleges">-</p>
+                        <span class="card-change positive">
+                            <i class="fas fa-arrow-up"></i> <span id="colleges-change">0</span> this month
+                        </span>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <div class="card-icon total-students">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3 class="card-label">Total Students</h3>
+                        <p class="card-value" id="total-students">-</p>
+                        <span class="card-change positive">
+                            <i class="fas fa-users"></i> Across all colleges
+                        </span>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <div class="card-icon total-lecturers">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3 class="card-label">Total Lecturers</h3>
+                        <p class="card-value" id="total-lecturers">-</p>
+                        <span class="card-change neutral">
+                            <i class="fas fa-users"></i> System-wide
+                        </span>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <div class="card-icon total-departments">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3 class="card-label">Total Departments</h3>
+                        <p class="card-value" id="total-departments">-</p>
+                        <span class="card-change neutral">
+                            <i class="fas fa-building"></i> All colleges
+                        </span>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <div class="card-icon active-colleges">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3 class="card-label">Active Colleges</h3>
+                        <p class="card-value" id="active-colleges">-</p>
+                        <span class="card-change positive">
+                            <i class="fas fa-check"></i> Approved
+                        </span>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <div class="card-icon suspended-colleges">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3 class="card-label">Suspended Colleges</h3>
+                        <p class="card-value" id="suspended-colleges">-</p>
+                        <span class="card-change negative">
+                            <i class="fas fa-exclamation-triangle"></i> Inactive
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Colleges Growth by Month</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="colleges-growth-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Student Distribution by College Size</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="student-distribution-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Registrations -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent College Registrations</h3>
+                    <button class="btn btn-sm btn-primary" id="view-all-colleges">View All</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="data-table" id="recent-colleges-table">
+                            <thead>
+                                <tr>
+                                    <th>College Name</th>
+                                    <th>Owner/Principal</th>
+                                    <th>Email</th>
+                                    <th>Location</th>
+                                    <th>Date Registered</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-colleges-tbody">
+                                <tr>
+                                    <td colspan="7" class="loading-row">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colleges Management Page -->
+        <div class="page-content hidden" id="page-colleges">
+            <div class="page-header">
+                <h1 class="page-title">Colleges Management</h1>
+                <button class="btn btn-primary" id="add-college-btn">
+                    <i class="fas fa-plus"></i> Add New College
+                </button>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="college-search" placeholder="Search colleges...">
+                </div>
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="status-filter" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Type:</label>
+                    <select id="type-filter" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="TVET">TVET</option>
+                        <option value="College">College</option>
+                        <option value="University">University</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Date Range:</label>
+                    <input type="date" id="date-from" class="form-input">
+                    <input type="date" id="date-to" class="form-input">
+                </div>
+                <button class="btn btn-secondary" id="clear-filters">Clear</button>
+            </div>
+
+            <!-- Bulk Actions -->
+            <div class="bulk-actions-bar hidden" id="bulk-actions">
+                <span id="selected-count">0 selected</span>
+                <div class="bulk-buttons">
+                    <button class="btn btn-sm btn-success" id="bulk-approve">Approve Selected</button>
+                    <button class="btn btn-sm btn-warning" id="bulk-suspend">Suspend Selected</button>
+                    <button class="btn btn-sm btn-danger" id="bulk-delete">Delete Selected</button>
+                </div>
+            </div>
+
+            <!-- Colleges Table -->
+            <div class="content-card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="data-table" id="colleges-table">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="select-all">
+                                    </th>
+                                    <th>College Name</th>
+                                    <th>Owner/Principal</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Location</th>
+                                    <th>Type</th>
+                                    <th>Date Registered</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="colleges-tbody">
+                                <tr>
+                                    <td colspan="10" class="loading-row">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading colleges...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="colleges-pagination"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Page -->
+        <div class="page-content hidden" id="page-analytics">
+            <div class="page-header">
+                <h1 class="page-title">Analytics & Reports</h1>
+            </div>
+            <div class="analytics-content">
+                <p>Advanced analytics and reporting features coming soon...</p>
+            </div>
+        </div>
+
+        <!-- System Settings Page -->
+        <div class="page-content hidden" id="page-settings">
+            <div class="page-header">
+                <h1 class="page-title">System Settings</h1>
+            </div>
+            <div class="content-card">
+                <div class="card-header">
+                    <h3 class="card-title">Platform Settings</h3>
+                </div>
+                <div class="card-body">
+                    <form id="settings-form">
+                        <div class="form-group">
+                            <label class="form-label">Platform Name</label>
+                            <input type="text" id="platform-name" class="form-input" value="SmartCampus">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Platform Logo</label>
+                            <input type="file" id="platform-logo" class="form-input" accept="image/*">
+                            <small class="form-help">Upload platform logo (PNG, JPG, max 2MB)</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Default Registration Status</label>
+                            <select id="default-status" class="form-select">
+                                <option value="pending">Pending Approval</option>
+                                <option value="active">Auto-Approved</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">System Email</label>
+                            <input type="email" id="system-email" class="form-input" placeholder="admin@smartcampus.com">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div class="page-content hidden" id="page-profile">
+            <div class="page-header">
+                <h1 class="page-title">My Profile</h1>
+            </div>
+            <div class="content-card">
+                <div class="card-header">
+                    <h3 class="card-title">Super Admin Profile</h3>
+                </div>
+                <div class="card-body">
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="profile-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="profile-email" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" id="profile-phone" class="form-input">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Add Button -->
+    <button class="fab" id="fab-add-college" title="Add New College">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- College Modal -->
+    <div class="modal" id="college-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Add New College</h2>
+                <button class="modal-close" id="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="college-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">College Name <span class="required">*</span></label>
+                        <input type="text" id="college-name" name="name" class="form-input" required>
+                        <span class="error-message" id="error-name"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Owner/Principal Full Name <span class="required">*</span></label>
+                        <input type="text" id="owner-name" name="owner_name" class="form-input" required>
+                        <span class="error-message" id="error-owner-name"></span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Owner Email <span class="required">*</span></label>
+                            <input type="email" id="owner-email" name="owner_email" class="form-input" required>
+                            <span class="error-message" id="error-owner-email"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Owner Phone <span class="required">*</span></label>
+                            <input type="tel" id="owner-phone" name="owner_phone" class="form-input" required>
+                            <span class="error-message" id="error-owner-phone"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Location (County/City) <span class="required">*</span></label>
+                            <input type="text" id="location" name="location" class="form-input" required>
+                            <span class="error-message" id="error-location"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Type <span class="required">*</span></label>
+                            <select id="college-type" name="type" class="form-select" required>
+                                <option value="">Select Type</option>
+                                <option value="TVET">TVET</option>
+                                <option value="College">College</option>
+                                <option value="University">University</option>
+                            </select>
+                            <span class="error-message" id="error-type"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact Address</label>
+                        <textarea id="address" name="address" class="form-input" rows="3"></textarea>
+                        <span class="error-message" id="error-address"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Website (Optional)</label>
+                        <input type="url" id="website" name="website" class="form-input" placeholder="https://example.com">
+                        <span class="error-message" id="error-website"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status <span class="required">*</span></label>
+                        <select id="college-status" name="status" class="form-select" required>
+                            <option value="pending">Pending</option>
+                            <option value="active">Approved</option>
+                            <option value="inactive">Suspended</option>
+                        </select>
+                        <span class="error-message" id="error-status"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit">
+                        <span class="btn-text">Save College</span>
+                        <span class="btn-loader hidden">
+                            <i class="fas fa-spinner fa-spin"></i> Saving...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Deny Reason Modal -->
+    <div class="modal" id="deny-modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2 class="modal-title">Deny Registration</h2>
+                <button class="modal-close" id="deny-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="deny-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Reason for Denial <span class="required">*</span></label>
+                        <textarea id="deny-reason" class="form-input" rows="4" required placeholder="Please provide a reason for denying this registration..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="deny-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Denial</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- CSRF Token for JavaScript -->
+    <script>
+        // Get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        window.csrftoken = getCookie('csrftoken');
+    </script>
+    <script src="{% static 'js/admin/superadmin.js' %}"></script>
+</body>
+</html>
+

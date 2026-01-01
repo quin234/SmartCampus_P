@@ -1,0 +1,955 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Fee Structure - Courses{% endblock %}
+{% block icon %}file-invoice-dollar{% endblock %}
+{% block page_title %}Fee Structure{% endblock %}
+{% block page_subtitle %}Manage fee structures for all courses{% endblock %}
+
+{% load role_tags %}
+{% block header_actions %}
+<div style="display: flex; gap: 12px; align-items: center;">
+    {% if request.user.is_director or request.user.is_principal or request.user.is_accounts_officer %}
+    {% if request.user.is_principal or request.user.is_accounts_officer %}
+    <button class="btn btn-secondary" onclick="openFeeItemsListDialog()">
+        <i class="fas fa-list"></i> View Fee Items
+    </button>
+    {% endif %}
+    {% if request.user.is_director %}
+    <button class="btn btn-primary" onclick="openFeeItemDialog()">
+        <i class="fas fa-plus"></i> New Fee Item
+    </button>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-book"></i> Courses</h3>
+    </div>
+    <div class="card-body">
+        <!-- Search Box -->
+        <div class="search-container" style="margin-bottom: 20px;">
+            <div class="search-box" style="position: relative;">
+                <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-gray, #666);"></i>
+                <input type="text" id="courseSearchInput" class="form-input" placeholder="Search courses by name or code..." 
+                       style="padding-left: 40px;" onkeyup="filterCourses()">
+            </div>
+        </div>
+        
+        {% if courses %}
+            <div class="table-container">
+                <table class="data-table" id="coursesTable">
+                    <thead>
+                        <tr>
+                            <th>Course Name</th>
+                            <th>Course Code</th>
+                            <th>Duration</th>
+                            <th>Fee Structure Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course_data in courses %}
+                        <tr class="{% if not course_data.has_fee_structure %}no-fee-structure{% endif %}" data-course-id="{{ course_data.course.id }}" data-duration-years="{{ course_data.course.duration_years }}">
+                            <td><strong>{{ course_data.course.name }}</strong></td>
+                            <td>{{ course_data.course.code }}</td>
+                            <td>{{ course_data.course.duration_years }} year{{ course_data.course.duration_years|pluralize }}</td>
+                            <td>
+                                {% if course_data.has_fee_structure %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check-circle"></i> Configured
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-danger">
+                                        <i class="fas fa-exclamation-circle"></i> Not Configured
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="openFeeStructureDialog({{ course_data.course.id }}, '{{ course_data.course.name|escapejs }}')">
+                                    <i class="fas fa-edit"></i> Edit Fee Structure
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-book"></i>
+                <p>No courses found. Please create courses first.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Fee Structure Dialog -->
+<div id="feeStructureDialog" class="modal-overlay" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 class="modal-title" id="dialogCourseName">Course Fee Structure</h3>
+            <button class="modal-close" onclick="closeFeeStructureDialog()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="feeStructureForm">
+                <div class="form-row" style="display: flex; gap: 16px; margin-bottom: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-alt"></i> Year of Study <span style="color: #dc3545;">*</span>
+                        </label>
+                        <select id="yearDropdown" class="form-input" onchange="updateSemesterDropdown()" required>
+                            <option value="">Select Year</option>
+                        </select>
+                        <small class="form-text">Select the year of study</small>
+                    </div>
+                    
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label">
+                            <i class="fas fa-sort-numeric-up"></i> Semester <span style="color: #dc3545;">*</span>
+                        </label>
+                        <select id="semesterDropdown" class="form-input" onchange="loadFeeStructureForSemester()" required>
+                            <option value="">Select Semester</option>
+                        </select>
+                        <small class="form-text">Select the semester</small>
+                    </div>
+                </div>
+                
+                <div id="feeItemsContainer">
+                    <div class="loading-state" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading fee items...
+                    </div>
+                    <div class="empty-state" id="selectSemesterPrompt">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Please select a year and semester to view/edit fee structure</p>
+                    </div>
+                </div>
+                
+                <!-- Total Amount Display -->
+                <div id="feeTotalContainer" style="display: none; margin-top: 20px; padding: 16px; background: var(--bg-card-hover, #f5f5f5); border-radius: 8px; border-top: 2px solid var(--primary-blue, #007bff);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="font-size: 16px; color: var(--text-primary, #1a1a1a);">Total Fee Amount:</strong>
+                            <small style="display: block; color: var(--text-gray, #666); margin-top: 4px;">Sum of all fee items for this semester</small>
+                        </div>
+                        <div style="font-size: 24px; font-weight: 700; color: var(--primary-blue, #007bff);">
+                            KES <span id="feeTotalAmount">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeFeeStructureDialog()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveFeeStructure()">
+                <i class="fas fa-save"></i> Save Fee Structure
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Fee Item Management Dialog -->
+<div id="feeItemDialog" class="modal-overlay" style="display: none;">
+    <div class="modal-dialog" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="feeItemDialogTitle">Add Fee Item</h3>
+            <button class="modal-close" onclick="closeFeeItemDialog()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="feeItemForm">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-tag"></i> Name <span style="color: #dc3545;">*</span>
+                    </label>
+                    <input type="text" id="feeItemName" class="form-input" required placeholder="e.g., Tuition Fee" />
+                    <small class="form-text">Name of the fee item (required)</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i> Description
+                    </label>
+                    <textarea id="feeItemDescription" class="form-input" rows="3" placeholder="Optional description of what this fee item covers"></textarea>
+                    <small class="form-text">Optional description of the fee item</small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeFeeItemDialog()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveFeeItem()">
+                <i class="fas fa-save"></i> Save Fee Item
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Fee Items List Dialog -->
+<div id="feeItemsListDialog" class="modal-overlay" style="display: none;">
+    <div class="modal-dialog" style="max-width: 700px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Fee Items</h3>
+            <button class="modal-close" onclick="closeFeeItemsListDialog()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="feeItemsListContainer">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i> Loading fee items...
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeFeeItemsListDialog()">Close</button>
+            {% if request.user.is_director %}
+            <button type="button" class="btn btn-primary" onclick="openFeeItemDialog()">
+                <i class="fas fa-plus"></i> Add New Fee Item
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Dark theme support */
+    .no-fee-structure {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+    .no-fee-structure:hover {
+        background-color: rgba(220, 53, 69, 0.15) !important;
+    }
+    
+    /* Table styling for dark theme */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .data-table thead {
+        background: var(--bg-card-hover, #f5f5f5);
+    }
+    
+    .data-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-primary, #1a1a1a);
+        border-bottom: 2px solid var(--border-color, #e0e0e0);
+    }
+    
+    .data-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color, #e0e0e0);
+        color: var(--text-primary, #1a1a1a);
+    }
+    
+    .data-table tbody tr:hover {
+        background: var(--bg-card-hover, #f5f5f5);
+    }
+    
+    .data-table tbody tr.no-fee-structure:hover {
+        background: rgba(220, 53, 69, 0.15) !important;
+    }
+    
+    .badge-danger {
+        background-color: #dc3545;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    
+    .badge-success {
+        background-color: #28a745;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+    }
+    
+    .modal-dialog {
+        background: var(--bg-card, #ffffff);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color, #e0e0e0);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary, #1a1a1a);
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--text-gray, #666);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    
+    .modal-close:hover {
+        background: var(--bg-card-hover, #f5f5f5);
+        color: var(--text-primary, #1a1a1a);
+    }
+    
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+    
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border-color, #e0e0e0);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    
+    .fee-item-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 12px;
+        border: 1px solid var(--border-color, #e0e0e0);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        background: var(--bg-card, #ffffff);
+    }
+    
+    .fee-item-info {
+        flex: 1;
+    }
+    
+    .fee-item-name {
+        font-weight: 600;
+        color: var(--text-primary, #1a1a1a);
+        margin-bottom: 4px;
+    }
+    
+    .fee-item-description {
+        font-size: 13px;
+        color: var(--text-gray, #666);
+    }
+    
+    .fee-item-amount {
+        width: 150px;
+    }
+    
+    .fee-item-amount input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--border-color, #e0e0e0);
+        border-radius: 6px;
+        font-size: 14px;
+        background: var(--bg-card, #ffffff);
+        color: var(--text-primary, #1a1a1a);
+    }
+    
+    .fee-item-amount input:focus {
+        outline: none;
+        border-color: var(--primary-blue, #007bff);
+    }
+    
+    /* Form styling */
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--text-primary, #1a1a1a);
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border-color, #e0e0e0);
+        border-radius: 6px;
+        font-size: 14px;
+        background: var(--bg-card, #ffffff);
+        color: var(--text-primary, #1a1a1a);
+        font-family: inherit;
+    }
+    
+    .search-container {
+        margin-bottom: 20px;
+    }
+    
+    .search-box {
+        position: relative;
+        max-width: 400px;
+    }
+    
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-blue, #007bff);
+    }
+    
+    .form-text {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--text-gray, #666);
+    }
+    
+    /* Fee Items List */
+    .fee-item-list-item {
+        padding: 16px;
+        border: 1px solid var(--border-color, #e0e0e0);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        background: var(--bg-card, #ffffff);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .fee-item-list-item:hover {
+        background: var(--bg-card-hover, #f5f5f5);
+    }
+    
+    .fee-item-list-info {
+        flex: 1;
+    }
+    
+    .fee-item-list-name {
+        font-weight: 600;
+        color: var(--text-primary, #1a1a1a);
+        margin-bottom: 4px;
+    }
+    
+    .fee-item-list-description {
+        font-size: 13px;
+        color: var(--text-gray, #666);
+    }
+    
+    .fee-item-list-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-gray, #666);
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+    
+    .loading-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-gray, #666);
+    }
+    
+    .loading-state i {
+        font-size: 24px;
+        margin-bottom: 12px;
+    }
+    
+    @media (max-width: 768px) {
+        .modal-dialog {
+            max-width: 95%;
+            max-height: 95vh;
+        }
+        
+        .form-row {
+            flex-direction: column !important;
+            gap: 12px !important;
+        }
+        
+        .fee-item-row {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+        }
+        
+        .fee-item-amount {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+let currentCourseId = null;
+let currentCourseData = null;
+let currentSemesterNumber = null;
+
+function openFeeStructureDialog(courseId, courseName) {
+    currentCourseId = courseId;
+    currentSemesterNumber = null;
+    
+    // Get course data from the table
+    const courseRow = document.querySelector(`tr[data-course-id="${courseId}"]`);
+    if (!courseRow) {
+        alert('Course data not found');
+        return;
+    }
+    
+    const durationYears = parseInt(courseRow.dataset.durationYears) || 1;
+    const semestersPerYear = parseInt('{{ college.semesters_per_year|default:2 }}') || 2;
+    
+    currentCourseData = {
+        id: courseId,
+        name: courseName,
+        duration_years: durationYears,
+        semesters_per_year: semestersPerYear
+    };
+    
+    document.getElementById('dialogCourseName').textContent = courseName + ' - Fee Structure';
+    document.getElementById('feeStructureDialog').style.display = 'flex';
+    
+    // Populate year dropdown
+    populateYearDropdown();
+    
+    // Reset semester dropdown and fee items
+    document.getElementById('semesterDropdown').innerHTML = '<option value="">Select Semester</option>';
+    document.getElementById('feeItemsContainer').innerHTML = '<div class="empty-state" id="selectSemesterPrompt"><i class="fas fa-info-circle"></i><p>Please select a year and semester to view/edit fee structure</p></div>';
+}
+
+function populateYearDropdown() {
+    const yearDropdown = document.getElementById('yearDropdown');
+    yearDropdown.innerHTML = '<option value="">Select Year</option>';
+    
+    if (!currentCourseData) return;
+    
+    for (let year = 1; year <= currentCourseData.duration_years; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = `Year ${year}`;
+        yearDropdown.appendChild(option);
+    }
+}
+
+function updateSemesterDropdown() {
+    const yearDropdown = document.getElementById('yearDropdown');
+    const semesterDropdown = document.getElementById('semesterDropdown');
+    const selectedYear = parseInt(yearDropdown.value);
+    
+    semesterDropdown.innerHTML = '<option value="">Select Semester</option>';
+    currentSemesterNumber = null;
+    
+    // Clear fee items
+    document.getElementById('feeItemsContainer').innerHTML = '<div class="empty-state" id="selectSemesterPrompt"><i class="fas fa-info-circle"></i><p>Please select a semester to view/edit fee structure</p></div>';
+    
+    if (!selectedYear || !currentCourseData) return;
+    
+    const semestersPerYear = currentCourseData.semesters_per_year;
+    
+    // Calculate semester numbers for this year
+    // Year 1: semesters 1 to semesters_per_year
+    // Year 2: semesters (semesters_per_year + 1) to (2 * semesters_per_year)
+    // etc.
+    const startSemester = (selectedYear - 1) * semestersPerYear + 1;
+    const endSemester = selectedYear * semestersPerYear;
+    
+    for (let sem = startSemester; sem <= endSemester; sem++) {
+        const option = document.createElement('option');
+        option.value = sem;
+        option.textContent = `Semester ${sem}`;
+        semesterDropdown.appendChild(option);
+    }
+}
+
+function loadFeeStructureForSemester() {
+    const semesterDropdown = document.getElementById('semesterDropdown');
+    const semesterNumber = parseInt(semesterDropdown.value);
+    
+    if (!semesterNumber || !currentCourseId) {
+        return;
+    }
+    
+    currentSemesterNumber = semesterNumber;
+    
+    const container = document.getElementById('feeItemsContainer');
+    container.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Loading fee items...</div>';
+    
+    fetch(`/accounts/fee-structure/course/${currentCourseId}/?semester_number=${semesterNumber}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                container.innerHTML = `<div class="empty-state"><p style="color: #dc3545;">${escapeHtml(data.error)}</p></div>`;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            if (data.fee_items && data.fee_items.length > 0) {
+                data.fee_items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'fee-item-row';
+                    row.innerHTML = `
+                        <div class="fee-item-info">
+                            <div class="fee-item-name">${escapeHtml(item.name)}</div>
+                            ${item.description ? `<div class="fee-item-description">${escapeHtml(item.description)}</div>` : ''}
+                        </div>
+                        <div class="fee-item-amount">
+                            <input 
+                                type="number" 
+                                step="0.01" 
+                                min="0" 
+                                value="${item.amount}" 
+                                data-fee-item-id="${item.id}"
+                                placeholder="0.00"
+                                required
+                                oninput="calculateTotal()"
+                            />
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+                
+                // Show total container and calculate initial total
+                document.getElementById('feeTotalContainer').style.display = 'block';
+                calculateTotal();
+            } else {
+                container.innerHTML = '<div class="empty-state"><p>No fee items found. Please create fee items first.</p></div>';
+                document.getElementById('feeTotalContainer').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading fee structure:', error);
+            container.innerHTML = 
+                '<div class="empty-state"><p style="color: #dc3545;">Error loading fee structure. Please try again.</p></div>';
+            document.getElementById('feeTotalContainer').style.display = 'none';
+        });
+}
+
+function calculateTotal() {
+    const inputs = document.querySelectorAll('#feeItemsContainer input[data-fee-item-id]');
+    let total = 0;
+    
+    inputs.forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        total += value;
+    });
+    
+    document.getElementById('feeTotalAmount').textContent = total.toFixed(2);
+}
+
+function filterCourses() {
+    const input = document.getElementById('courseSearchInput');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('coursesTable');
+    const rows = table.getElementsByTagName('tr');
+    
+    // Skip header row (index 0)
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const courseName = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
+        const courseCode = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
+        
+        if (courseName.includes(filter) || courseCode.includes(filter)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    }
+}
+
+function closeFeeStructureDialog() {
+    document.getElementById('feeStructureDialog').style.display = 'none';
+    currentCourseId = null;
+    currentCourseData = null;
+    currentSemesterNumber = null;
+    document.getElementById('yearDropdown').value = '';
+    document.getElementById('semesterDropdown').innerHTML = '<option value="">Select Semester</option>';
+    document.getElementById('feeItemsContainer').innerHTML = '<div class="empty-state" id="selectSemesterPrompt"><i class="fas fa-info-circle"></i><p>Please select a year and semester to view/edit fee structure</p></div>';
+    document.getElementById('feeTotalContainer').style.display = 'none';
+}
+
+function saveFeeStructure() {
+    if (!currentCourseId) {
+        alert('No course selected');
+        return;
+    }
+    
+    if (!currentSemesterNumber) {
+        alert('Please select a semester first');
+        return;
+    }
+    
+    const inputs = document.querySelectorAll('#feeItemsContainer input[data-fee-item-id]');
+    const feeItems = [];
+    
+    inputs.forEach(input => {
+        const feeItemId = input.getAttribute('data-fee-item-id');
+        const amount = input.value || '0.00';
+        feeItems.push({
+            fee_item_id: feeItemId,
+            amount: amount
+        });
+    });
+    
+    // Show loading state
+    const saveButton = document.querySelector('#feeStructureDialog .modal-footer .btn-primary');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveButton.disabled = true;
+    
+    fetch(`/accounts/fee-structure/course/${currentCourseId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            semester_number: currentSemesterNumber,
+            fee_items: feeItems
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // Reload fee structure for current semester to show saved values
+            loadFeeStructureForSemester();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving fee structure:', error);
+        alert('Error saving fee structure. Please try again.');
+    })
+    .finally(() => {
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Close dialog when clicking outside
+document.getElementById('feeStructureDialog').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeFeeStructureDialog();
+    }
+});
+
+// Fee Item Management
+let currentEditingFeeItemId = null;
+
+function openFeeItemDialog(feeItemId = null) {
+    currentEditingFeeItemId = feeItemId;
+    const dialog = document.getElementById('feeItemDialog');
+    const title = document.getElementById('feeItemDialogTitle');
+    const nameInput = document.getElementById('feeItemName');
+    const descInput = document.getElementById('feeItemDescription');
+    const form = document.getElementById('feeItemForm');
+    
+    if (feeItemId) {
+        // Edit mode - load existing fee item
+        title.textContent = 'Edit Fee Item';
+        fetch(`/accounts/fee-structure/fee-items/`)
+            .then(response => response.json())
+            .then(data => {
+                const item = data.fee_items.find(i => i.id === feeItemId);
+                if (item) {
+                    nameInput.value = item.name;
+                    descInput.value = item.description || '';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading fee item:', error);
+                alert('Error loading fee item. Please try again.');
+            });
+    } else {
+        // Create mode
+        title.textContent = 'Add Fee Item';
+        form.reset();
+    }
+    
+    dialog.style.display = 'flex';
+}
+
+function closeFeeItemDialog() {
+    document.getElementById('feeItemDialog').style.display = 'none';
+    currentEditingFeeItemId = null;
+    document.getElementById('feeItemForm').reset();
+}
+
+function saveFeeItem() {
+    const name = document.getElementById('feeItemName').value.trim();
+    const description = document.getElementById('feeItemDescription').value.trim();
+    
+    if (!name) {
+        alert('Name is required');
+        return;
+    }
+    
+    const saveButton = document.querySelector('#feeItemDialog .modal-footer .btn-primary');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveButton.disabled = true;
+    
+    const url = currentEditingFeeItemId 
+        ? `/accounts/fee-structure/fee-items/${currentEditingFeeItemId}/edit/`
+        : '/accounts/fee-structure/fee-items/create/';
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            name: name,
+            description: description
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            closeFeeItemDialog();
+            // If fee items list dialog is open, reload it
+            if (document.getElementById('feeItemsListDialog').style.display !== 'none') {
+                loadFeeItemsList();
+            }
+            // Reload page to refresh fee items in course fee structure dialog
+            if (document.getElementById('feeStructureDialog').style.display !== 'none') {
+                const courseId = currentCourseId;
+                if (courseId) {
+                    loadFeeStructure(courseId);
+                }
+            }
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving fee item:', error);
+        alert('Error saving fee item. Please try again.');
+    })
+    .finally(() => {
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+    });
+}
+
+function openFeeItemsListDialog() {
+    document.getElementById('feeItemsListDialog').style.display = 'flex';
+    loadFeeItemsList();
+}
+
+function closeFeeItemsListDialog() {
+    document.getElementById('feeItemsListDialog').style.display = 'none';
+}
+
+function loadFeeItemsList() {
+    const container = document.getElementById('feeItemsListContainer');
+    container.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Loading fee items...</div>';
+    
+    fetch('/accounts/fee-structure/fee-items/')
+        .then(response => response.json())
+        .then(data => {
+            container.innerHTML = '';
+            
+            if (data.fee_items && data.fee_items.length > 0) {
+                data.fee_items.forEach(item => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'fee-item-list-item';
+                    listItem.innerHTML = `
+                        <div class="fee-item-list-info">
+                            <div class="fee-item-list-name">${escapeHtml(item.name)}</div>
+                            ${item.description ? `<div class="fee-item-list-description">${escapeHtml(item.description)}</div>` : ''}
+                        </div>
+                        <div class="fee-item-list-actions">
+                            ${data.can_edit ? `<button class="btn btn-sm btn-primary" onclick="openFeeItemDialog(${item.id})" title="Edit Fee Item">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>` : ''}
+                        </div>
+                    `;
+                    container.appendChild(listItem);
+                });
+            } else {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No fee items found.</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading fee items:', error);
+            container.innerHTML = '<div class="empty-state"><p style="color: #dc3545;">Error loading fee items. Please try again.</p></div>';
+        });
+}
+
+// Close dialogs when clicking outside
+document.getElementById('feeItemDialog').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeFeeItemDialog();
+    }
+});
+
+document.getElementById('feeItemsListDialog').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeFeeItemsListDialog();
+    }
+});
+
+</script>
+{% endblock %}
+

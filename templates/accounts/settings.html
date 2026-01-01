@@ -1,0 +1,648 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Accounts Settings{% endblock %}
+{% block icon %}cog{% endblock %}
+{% block page_title %}Accounts Settings{% endblock %}
+{% block page_subtitle %}Manage fee structure and sponsorship settings{% endblock %}
+
+{% load role_tags %}
+{% block content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-cog"></i> Settings</h3>
+    </div>
+    <div class="card-body">
+        <!-- Tabs -->
+        <div class="tabs" style="margin-bottom: 24px; background: var(--bg-card-hover); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 6px;">
+            <button class="tab-btn {% if active_tab == 'fee_structure' %}active{% endif %}" onclick="switchTab('fee_structure')">
+                <i class="fas fa-file-invoice-dollar"></i> Fee Structure
+            </button>
+            {% if request.user|can_manage_finance %}
+            <button class="tab-btn {% if active_tab == 'sponsorship' %}active{% endif %}" onclick="switchTab('sponsorship')">
+                <i class="fas fa-hand-holding-heart"></i> Sponsorship
+            </button>
+            {% endif %}
+            {% if can_manage_daraja %}
+            <button class="tab-btn {% if active_tab == 'daraja' %}active{% endif %}" onclick="switchTab('daraja')">
+                <i class="fas fa-mobile-alt"></i> M-Pesa Payments
+            </button>
+            {% elif request.user|can_record_payments %}
+            <button class="tab-btn" style="opacity: 0.5; cursor: not-allowed;" title="Only Directors can access payment settings">
+                <i class="fas fa-mobile-alt"></i> M-Pesa Payments
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Fee Structure Tab -->
+        <div id="fee_structure-tab" class="tab-content {% if active_tab == 'fee_structure' %}active{% endif %}">
+            <div class="settings-section">
+                <h4><i class="fas fa-file-invoice-dollar"></i> Fee Structure Management</h4>
+                <p>Manage course fees per semester. Fees are static across academic years but can be updated via versioning.</p>
+                
+                <div style="margin-top: 20px;">
+                    <a href="{% url 'accounts:fee_structure_courses_list' %}" class="btn btn-primary">
+                        <i class="fas fa-book"></i> Manage Course Fee Structures
+                    </a>
+                </div>
+
+                <div class="info-box" style="margin-top: 20px; padding: 15px; background: var(--bg-card-hover); border-radius: var(--border-radius); border-left: 4px solid var(--primary-blue);">
+                    <h5><i class="fas fa-info-circle"></i> How Fee Structures Work</h5>
+                    <ul style="margin-top: 10px; padding-left: 20px;">
+                        <li>Fees are defined per course and semester number (1, 2, 3...)</li>
+                        <li>Fees are static across all academic years</li>
+                        <li>When fees are updated, new versions are created</li>
+                        <li>Students are protected from retroactive fee changes</li>
+                        <li>Each semester can have multiple fee types (Tuition, Registration, etc.)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sponsorship Tab -->
+        {% if request.user|can_manage_finance %}
+        <div id="sponsorship-tab" class="tab-content {% if active_tab == 'sponsorship' %}active{% endif %}">
+            <div class="settings-section">
+                <h4><i class="fas fa-hand-holding-heart"></i> School Sponsorship Settings</h4>
+                <p>Configure default sponsorship settings that apply to all sponsored students.</p>
+
+                <form method="post" action="{% url 'accounts:accounts_settings' %}?tab=sponsorship" class="form-section" style="margin-top: 20px;">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-group full-width">
+                        <label class="form-label">
+                            {{ form.sponsorship_enabled }}
+                            <label for="{{ form.sponsorship_enabled.id_for_label }}" style="margin-left: 8px; font-weight: normal; cursor: pointer;">
+                                Enable School Sponsorship System
+                            </label>
+                        </label>
+                        <small class="form-text text-muted">When enabled, students can be marked as sponsored and receive fee discounts.</small>
+                        {% if form.sponsorship_enabled.errors %}
+                            <div class="form-error">{{ form.sponsorship_enabled.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div id="sponsorship-fields" style="{% if not settings.sponsorship_enabled %}display: none;{% endif %}">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-percent"></i> {{ form.sponsorship_default_discount_type.label }}
+                                </label>
+                                {{ form.sponsorship_default_discount_type }}
+                                <small class="form-text text-muted">Default discount type for sponsored students (can be overridden per student)</small>
+                                {% if form.sponsorship_default_discount_type.errors %}
+                                    <div class="form-error">{{ form.sponsorship_default_discount_type.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-dollar-sign"></i> {{ form.sponsorship_default_discount_value.label }}
+                                </label>
+                                {{ form.sponsorship_default_discount_value }}
+                                <small class="form-text text-muted" id="discount-help">
+                                    {% if settings.sponsorship_default_discount_type == 'percentage' %}
+                                        Enter percentage (0-100)
+                                    {% else %}
+                                        Enter fixed amount in KES
+                                    {% endif %}
+                                </small>
+                                {% if form.sponsorship_default_discount_value.errors %}
+                                    <div class="form-error">{{ form.sponsorship_default_discount_value.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="info-box" style="margin-top: 20px; padding: 15px; background: var(--bg-card-hover); border-radius: var(--border-radius); border-left: 4px solid var(--success);">
+                            <h5><i class="fas fa-info-circle"></i> How Sponsorship Works</h5>
+                            <ul style="margin-top: 10px; padding-left: 20px;">
+                                <li>Students are "normal" by default during registration</li>
+                                <li>Principal can mark students as "sponsored" and set discount type/value</li>
+                                <li>These default settings are used as templates when marking students as sponsored</li>
+                                <li>Discounts are applied automatically during fee calculation</li>
+                                <li>Sponsored students see reduced fees in their portal</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Daraja M-Pesa Tab (Director Only) -->
+        {% if can_manage_daraja %}
+        <div id="daraja-tab" class="tab-content {% if active_tab == 'daraja' %}active{% endif %}">
+            <div class="settings-section">
+                <h4><i class="fas fa-mobile-alt"></i> Daraja M-Pesa Payment Integration</h4>
+                <p>Configure M-Pesa payment gateway using Safaricom's Daraja API. Students will be able to pay fees directly from their portal using STK Push.</p>
+
+                <!-- Nested Tabs for M-Pesa and Bank Details -->
+                <div class="nested-tabs" style="margin-top: 24px; background: var(--bg-card-hover); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 6px;">
+                    <button class="nested-tab-btn active" onclick="switchNestedTab('mpesa-config')">
+                        <i class="fas fa-mobile-alt"></i> M-Pesa Configuration
+                    </button>
+                    <button class="nested-tab-btn" onclick="switchNestedTab('bank-details')">
+                        <i class="fas fa-university"></i> Bank Details Configuration
+                    </button>
+                </div>
+
+                <form method="post" action="{% url 'accounts:accounts_settings' %}?tab=daraja" class="form-section" style="margin-top: 20px;">
+                    {% csrf_token %}
+                    
+                    {% if daraja_form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ daraja_form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- M-Pesa Configuration Tab -->
+                    <div id="mpesa-config-tab" class="nested-tab-content active">
+                        <div class="info-box" style="margin-top: 0; padding: 15px; background: var(--bg-card-hover); border-radius: var(--border-radius); border-left: 4px solid var(--primary-blue);">
+                            <h5 style="margin-bottom: 10px; color: var(--text-primary);"><i class="fas fa-info-circle"></i> How to Get Daraja API Credentials</h5>
+                            <ol style="margin-top: 10px; padding-left: 20px; color: var(--text-secondary);">
+                                <li style="margin-bottom: 8px;"><strong>Register on Safaricom Developer Portal:</strong> Go to <a href="https://developer.safaricom.co.ke" target="_blank" style="color: var(--primary-blue);">https://developer.safaricom.co.ke</a></li>
+                                <li style="margin-bottom: 8px;"><strong>Create an App:</strong> Register your application to get Consumer Key and Consumer Secret</li>
+                                <li style="margin-bottom: 8px;"><strong>Get Passkey:</strong> Navigate to Lipa na M-Pesa Online section and copy your Passkey</li>
+                                <li style="margin-bottom: 8px;"><strong>Test Mode:</strong> Use Sandbox credentials for testing. Disable test mode for production.</li>
+                                <li style="margin-bottom: 8px;"><strong>Production:</strong> After testing, apply for production credentials from Safaricom</li>
+                            </ol>
+                            <p style="margin-top: 10px; color: var(--text-secondary);"><strong>Note:</strong> All credentials are encrypted and stored securely in the database.</p>
+                        </div>
+
+                        <!-- PayBill Number -->
+                        <div class="form-group full-width" style="margin-top: 20px;">
+                            <label class="form-label">
+                                <i class="fas fa-hashtag"></i> PayBill Number *
+                            </label>
+                            {{ daraja_form.paybill_number }}
+                            <small class="form-text text-muted">Your M-Pesa PayBill Number (e.g., 123456). Transaction type is automatically set to CustomerPayBillOnline for bank settlement.</small>
+                            {% if daraja_form.paybill_number.errors %}
+                                <div class="form-error">{{ daraja_form.paybill_number.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- API Credentials -->
+                        <h5 style="margin-top: 30px; margin-bottom: 15px;"><i class="fas fa-key"></i> Daraja API Credentials</h5>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-key"></i> Consumer Key *
+                                </label>
+                                {{ daraja_form.consumer_key }}
+                                <small class="form-text text-muted">From Safaricom Developer Portal</small>
+                                {% if daraja_form.consumer_key.errors %}
+                                    <div class="form-error">{{ daraja_form.consumer_key.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-lock"></i> Consumer Secret *
+                                </label>
+                                {{ daraja_form.consumer_secret }}
+                                <small class="form-text text-muted">From Safaricom Developer Portal</small>
+                                {% if daraja_form.consumer_secret.errors %}
+                                    <div class="form-error">{{ daraja_form.consumer_secret.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-unlock-alt"></i> Passkey *
+                                </label>
+                                {{ daraja_form.passkey }}
+                                <small class="form-text text-muted">Lipa na M-Pesa Online Passkey</small>
+                                {% if daraja_form.passkey.errors %}
+                                    <div class="form-error">{{ daraja_form.passkey.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-code"></i> Shortcode
+                                </label>
+                                {{ daraja_form.shortcode }}
+                                <small class="form-text text-muted">Business Shortcode (auto-filled from Paybill/Till)</small>
+                                {% if daraja_form.shortcode.errors %}
+                                    <div class="form-error">{{ daraja_form.shortcode.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Configuration -->
+                        <h5 style="margin-top: 30px; margin-bottom: 15px;"><i class="fas fa-cog"></i> Configuration</h5>
+                        
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                {{ daraja_form.is_active }}
+                                <label for="{{ daraja_form.is_active.id_for_label }}" style="margin-left: 8px; font-weight: normal; cursor: pointer;">
+                                    Enable M-Pesa Payments
+                                </label>
+                            </label>
+                            <small class="form-text text-muted">When enabled, students can pay fees using M-Pesa from their portal</small>
+                            {% if daraja_form.is_active.errors %}
+                                <div class="form-error">{{ daraja_form.is_active.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                {{ daraja_form.is_test_mode }}
+                                <label for="{{ daraja_form.is_test_mode.id_for_label }}" style="margin-left: 8px; font-weight: normal; cursor: pointer;">
+                                    Use Test Mode (Sandbox)
+                                </label>
+                            </label>
+                            <small class="form-text text-muted">Enable for testing with Sandbox credentials. Disable for production.</small>
+                            {% if daraja_form.is_test_mode.errors %}
+                                <div class="form-error">{{ daraja_form.is_test_mode.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <i class="fas fa-link"></i> Callback URL
+                            </label>
+                            {{ daraja_form.callback_url }}
+                            <small class="form-text text-muted">Auto-generated if left blank. Used by Safaricom to send payment confirmations.</small>
+                            {% if daraja_form.callback_url.errors %}
+                                <div class="form-error">{{ daraja_form.callback_url.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Additional Settings -->
+                        <h5 style="margin-top: 30px; margin-bottom: 15px;"><i class="fas fa-sliders-h"></i> Additional Settings</h5>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-tag"></i> Account Reference Prefix
+                                </label>
+                                {{ daraja_form.account_reference }}
+                                <small class="form-text text-muted">Optional prefix for payment reference (e.g., "FEE" will show as "FEE-ADM123")</small>
+                                {% if daraja_form.account_reference.errors %}
+                                    <div class="form-error">{{ daraja_form.account_reference.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-comment"></i> Transaction Description
+                                </label>
+                                {{ daraja_form.transaction_description }}
+                                <small class="form-text text-muted">Description shown in M-Pesa prompt (e.g., "Fee Payment")</small>
+                                {% if daraja_form.transaction_description.errors %}
+                                    <div class="form-error">{{ daraja_form.transaction_description.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bank Details Configuration Tab -->
+                    <div id="bank-details-tab" class="nested-tab-content">
+                        <div class="info-box" style="margin-top: 0; padding: 15px; background: var(--bg-card-hover); border-radius: var(--border-radius); border-left: 4px solid var(--success);">
+                            <h5 style="margin-bottom: 10px; color: var(--text-primary);"><i class="fas fa-info-circle"></i> Bank Transfer Configuration</h5>
+                            <p style="color: var(--text-secondary);">Configure bank account details that will be displayed to students for direct bank transfers. This allows students to make payments via bank transfer and manually record them in the system.</p>
+                        </div>
+
+                        <div class="form-group full-width" style="margin-top: 20px;">
+                            <label class="form-label">
+                                {{ daraja_form.bank_transfers_enabled }}
+                                <label for="{{ daraja_form.bank_transfers_enabled.id_for_label }}" style="margin-left: 8px; font-weight: normal; cursor: pointer;">
+                                    Enable Direct Bank Transfers
+                                </label>
+                            </label>
+                            <small class="form-text text-muted">When enabled, students can view bank account details and make direct bank transfers</small>
+                            {% if daraja_form.bank_transfers_enabled.errors %}
+                                <div class="form-error">{{ daraja_form.bank_transfers_enabled.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div id="bank-transfer-fields" style="{% if not daraja_form.bank_transfers_enabled.value %}display: none;{% endif %}">
+                            <div class="form-row" style="margin-top: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-university"></i> Bank Name *
+                                    </label>
+                                    {{ daraja_form.bank_name }}
+                                    <small class="form-text text-muted">e.g., Equity Bank, KCB, Co-operative Bank</small>
+                                    {% if daraja_form.bank_name.errors %}
+                                        <div class="form-error">{{ daraja_form.bank_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-user"></i> Account Name *
+                                    </label>
+                                    {{ daraja_form.bank_account_name }}
+                                    <small class="form-text text-muted">Name on the bank account</small>
+                                    {% if daraja_form.bank_account_name.errors %}
+                                        <div class="form-error">{{ daraja_form.bank_account_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-hashtag"></i> Account Number *
+                                    </label>
+                                    {{ daraja_form.bank_account_number }}
+                                    <small class="form-text text-muted">Bank account number</small>
+                                    {% if daraja_form.bank_account_number.errors %}
+                                        <div class="form-error">{{ daraja_form.bank_account_number.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-map-marker-alt"></i> Branch Name
+                                    </label>
+                                    {{ daraja_form.bank_branch }}
+                                    <small class="form-text text-muted">Bank branch name (optional)</small>
+                                    {% if daraja_form.bank_branch.errors %}
+                                        <div class="form-error">{{ daraja_form.bank_branch.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-globe"></i> SWIFT/BIC Code
+                                    </label>
+                                    {{ daraja_form.bank_swift_code }}
+                                    <small class="form-text text-muted">SWIFT code for international transfers (optional)</small>
+                                    {% if daraja_form.bank_swift_code.errors %}
+                                        <div class="form-error">{{ daraja_form.bank_swift_code.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    <i class="fas fa-info-circle"></i> Payment Instructions
+                                </label>
+                                {{ daraja_form.bank_transfer_instructions }}
+                                <small class="form-text text-muted">Instructions for students (e.g., "Use your admission number as payment reference")</small>
+                                {% if daraja_form.bank_transfer_instructions.errors %}
+                                    <div class="form-error">{{ daraja_form.bank_transfer_instructions.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Payment Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    // Check if the tab button is disabled (for accounts_officer trying to access payment settings)
+    const clickedButton = event.target.closest('.tab-btn');
+    if (clickedButton && clickedButton.style.opacity === '0.5') {
+        // Tab is disabled, don't switch
+        return;
+    }
+    
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    const targetTab = document.getElementById(tabName + '-tab');
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+    
+    // Add active class to clicked button
+    if (clickedButton) {
+        clickedButton.classList.add('active');
+    }
+    
+    // Update URL without reload
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.pushState({}, '', url);
+}
+
+// Nested tab switching for M-Pesa and Bank Details
+function switchNestedTab(tabName) {
+    // Hide all nested tabs
+    document.querySelectorAll('.nested-tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active class from all nested tab buttons
+    document.querySelectorAll('.nested-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected nested tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.closest('.nested-tab-btn').classList.add('active');
+}
+
+// Toggle sponsorship fields visibility
+document.getElementById('id_sponsorship_enabled').addEventListener('change', function() {
+    const fields = document.getElementById('sponsorship-fields');
+    if (this.checked) {
+        fields.style.display = 'block';
+    } else {
+        fields.style.display = 'none';
+    }
+});
+
+// Update help text when discount type changes
+const discountTypeField = document.getElementById('id_discount_type');
+if (discountTypeField) {
+    discountTypeField.addEventListener('change', function() {
+        const helpText = document.getElementById('discount-help');
+        const valueInput = document.getElementById('id_discount_value');
+        if (this.value === 'percentage') {
+            helpText.textContent = 'Enter percentage (0-100)';
+            valueInput.setAttribute('max', '100');
+        } else {
+            helpText.textContent = 'Enter fixed amount in KES';
+            valueInput.removeAttribute('max');
+        }
+    });
+}
+
+// Toggle bank transfer fields visibility
+const bankTransfersEnabledField = document.getElementById('id_bank_transfers_enabled');
+if (bankTransfersEnabledField) {
+    // Set initial state
+    const fields = document.getElementById('bank-transfer-fields');
+    if (fields) {
+        if (bankTransfersEnabledField.checked) {
+            fields.style.display = 'block';
+        } else {
+            fields.style.display = 'none';
+        }
+    }
+    
+    // Add event listener for toggle
+    bankTransfersEnabledField.addEventListener('change', function() {
+        const fields = document.getElementById('bank-transfer-fields');
+        if (fields) {
+            if (this.checked) {
+                fields.style.display = 'block';
+            } else {
+                fields.style.display = 'none';
+            }
+        }
+    });
+}
+</script>
+
+<style>
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Nested Tabs Styles */
+.nested-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 6px;
+}
+
+.nested-tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.nested-tab-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.nested-tab-btn.active {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.nested-tab-content {
+    display: none;
+}
+
+.nested-tab-content.active {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .nested-tabs {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .nested-tab-btn {
+        width: 100%;
+        padding: 12px;
+    }
+}
+
+.settings-section {
+    padding: 20px 0;
+}
+
+.info-box {
+    margin-top: 20px;
+}
+
+.info-box h5 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.info-box ul {
+    margin-top: 10px;
+    padding-left: 20px;
+}
+
+.info-box li {
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+}
+</style>
+{% endblock %}
+

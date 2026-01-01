@@ -1,0 +1,128 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ title }} - Accounts{% endblock %}
+{% block icon %}file-invoice-dollar{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div class="card-body">
+        <form method="post" class="form-section">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-book"></i>
+                        {{ form.course.label }}
+                    </label>
+                    {{ form.course }}
+                    {% if form.course.errors %}
+                        <div class="form-error">{{ form.course.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-sort-numeric-up"></i>
+                        {{ form.semester_number.label }}
+                    </label>
+                    {{ form.semester_number }}
+                    {% if form.semester_number.errors %}
+                        <div class="form-error">{{ form.semester_number.errors }}</div>
+                    {% endif %}
+                    {% if form.semester_number.help_text %}
+                        <small class="form-text text-muted">{{ form.semester_number.help_text }}</small>
+                    {% endif %}
+                    <div id="semester-info" style="margin-top: 5px; font-size: 0.9em; color: #666;"></div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-tags"></i>
+                        {{ form.fee_type.label }}
+                    </label>
+                    {{ form.fee_type }}
+                    {% if form.fee_type.errors %}
+                        <div class="form-error">{{ form.fee_type.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-dollar-sign"></i>
+                        {{ form.amount.label }}
+                    </label>
+                    {{ form.amount }}
+                    {% if form.amount.errors %}
+                        <div class="form-error">{{ form.amount.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group full-width">
+                <label class="form-label">
+                    <i class="fas fa-align-left"></i>
+                    {{ form.description.label }}
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="form-error">{{ form.description.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calendar"></i>
+                        {{ form.effective_from.label }}
+                    </label>
+                    {{ form.effective_from }}
+                    {% if form.effective_from.errors %}
+                        <div class="form-error">{{ form.effective_from.errors }}</div>
+                    {% endif %}
+                    {% if form.effective_from.help_text %}
+                        <small class="form-text text-muted">{{ form.effective_from.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-toggle-on"></i>
+                        {{ form.is_active.label }}
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" name="{{ form.is_active.name }}" {% if form.is_active.value %}checked{% endif %} class="form-check-input" id="id_is_active_fee">
+                        <label for="id_is_active_fee" style="margin: 0; font-weight: normal; cursor: pointer;">Enable this fee structure</label>
+                    </div>
+                    {% if form.is_active.errors %}
+                        <div class="form-error">{{ form.is_active.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if form.instance.pk and form.instance.version_number > 1 %}
+            <div class="alert alert-info" style="margin-top: 15px;">
+                <i class="fas fa-info-circle"></i>
+                <strong>Version {{ form.instance.version_number }}</strong> - This is version {{ form.instance.version_number }} of the fee structure.
+                {% if form.instance.effective_from %}
+                    Effective from: {{ form.instance.effective_from|date:"Y-m-d" }}
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Fee Structure
+                </button>
+                <a href="{% url 'accounts:fee_structure_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Status - {{ college.name }}</title>
+    {% load static %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .status-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .status-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 48px;
+            color: white;
+        }
+
+        .status-icon.suspended {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .status-icon.deferred {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .status-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .status-message {
+            color: #64748b;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .student-info {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #1e293b;
+        }
+
+        .contact-info {
+            background: #e0f2fe;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .contact-info h3 {
+            font-size: 16px;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+
+        .contact-info p {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .btn-logout {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="status-container">
+        <div class="status-icon {{ status }}">
+            {% if status == 'suspended' %}
+                <i class="fas fa-ban"></i>
+            {% elif status == 'deferred' %}
+                <i class="fas fa-pause-circle"></i>
+            {% else %}
+                <i class="fas fa-exclamation-triangle"></i>
+            {% endif %}
+        </div>
+        
+        <h1 class="status-title">
+            {% if status == 'suspended' %}
+                Account Suspended
+            {% elif status == 'deferred' %}
+                Studies Deferred
+            {% else %}
+                Account Inactive
+            {% endif %}
+        </h1>
+        
+        <p class="status-message">{{ message }}</p>
+        
+        <div class="student-info">
+            <div class="info-item">
+                <span class="info-label">Admission Number:</span>
+                <span class="info-value">{{ student.admission_number }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Name:</span>
+                <span class="info-value">{{ student.full_name }}</span>
+            </div>
+            {% if student.course %}
+            <div class="info-item">
+                <span class="info-label">Course:</span>
+                <span class="info-value">{{ student.course.name }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="contact-info">
+            <h3><i class="fas fa-info-circle"></i> Need Help?</h3>
+            <p><strong>College:</strong> {{ college.name }}</p>
+            {% if college.email %}
+            <p><strong>Email:</strong> {{ college.email }}</p>
+            {% endif %}
+            {% if college.phone %}
+            <p><strong>Phone:</strong> {{ college.phone }}</p>
+            {% endif %}
+        </div>
+        
+        <a href="{% url 'student_logout' college_slug=college.get_slug %}" class="btn-logout">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</body>
+</html>
+
+

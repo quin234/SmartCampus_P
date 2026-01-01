@@ -1,0 +1,87 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Fee Structure - Accounts{% endblock %}
+{% block icon %}file-invoice-dollar{% endblock %}
+{% block page_title %}Fee Structure{% endblock %}
+{% block page_subtitle %}Manage course fees per semester{% endblock %}
+
+{% load role_tags %}
+{% block header_actions %}
+{% if request.user|can_manage_fee_structure %}
+<a href="{% url 'accounts:fee_structure_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> Add Fee Structure
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-list"></i> Fee Structure</h3>
+    </div>
+    <div class="card-body">
+        {% if grouped_fees %}
+            {% for group in grouped_fees %}
+            <div class="fee-group" style="margin-bottom: 30px; padding: 20px; background: var(--bg-card-hover); border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                <h4 style="margin-bottom: 16px; color: var(--text-primary);">
+                    <i class="fas fa-book"></i> {{ group.course.name }} - Semester {{ group.semester_number }}
+                    {% if group.version > 1 %}
+                        <span class="badge badge-info" style="margin-left: 10px;">Version {{ group.version }}</span>
+                    {% endif %}
+                </h4>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Fee Type</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                {% if request.user|can_manage_fee_structure %}
+                                <th>Actions</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fee in group.fees %}
+                            <tr>
+                                <td>{{ fee.get_fee_type_display }}</td>
+                                <td><strong>KES {{ fee.amount|floatformat:2 }}</strong></td>
+                                <td>
+                                    {% if fee.is_active %}
+                                        <span class="badge badge-success">Active</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                {% if request.user|can_manage_fee_structure %}
+                                <td>
+                                    <a href="{% url 'accounts:fee_structure_edit' fee.pk %}" class="btn btn-sm btn-primary" title="Edit Fee Structure">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                            <tr style="background: var(--bg-card); font-weight: 600;">
+                                <td><strong>Total</strong></td>
+                                <td><strong>KES {{ group.total|floatformat:2 }}</strong></td>
+                                <td></td>
+                                {% if request.user|can_manage_fee_structure %}
+                                <td></td>
+                                {% endif %}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <p>No fee structure defined. Create fee structures for your courses and semesters.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

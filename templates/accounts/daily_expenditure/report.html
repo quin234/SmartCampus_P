@@ -1,0 +1,212 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Daily Expenditure Report - SmartCampus{% endblock %}
+{% block icon %}chart-line{% endblock %}
+{% block page_title %}Daily Expenditure Report{% endblock %}
+{% block page_subtitle %}View submitted daily expenditure reports{% endblock %}
+
+{% block header_actions %}
+<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+    <form method="get" style="display: flex; gap: 8px; align-items: center;">
+        <label for="date-select" style="font-weight: 600; color: var(--text-color);">
+            <i class="fas fa-calendar-alt"></i> Select Date:
+        </label>
+        <input type="date" 
+               id="date-select" 
+               name="date" 
+               value="{{ selected_date|date:'Y-m-d' }}" 
+               class="form-control" 
+               style="width: auto;"
+               onchange="this.form.submit()">
+    </form>
+    <div style="background: var(--primary-color); color: white; padding: 8px 16px; border-radius: 6px; font-weight: 600;">
+        <i class="fas fa-coins"></i> Total: KES {{ daily_total|floatformat:2 }}
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="content-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <!-- Expenditure List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-list"></i> Expenditures for {{ selected_date|date:"F d, Y" }}
+                <span class="badge" style="background: var(--success-color); color: white; margin-left: 8px;">
+                    {{ expenditures|length }}
+                </span>
+            </h3>
+        </div>
+        <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+            {% if expenditures %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Entered By</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expenditure in expenditures %}
+                        <tr>
+                            <td>{{ expenditure.description }}</td>
+                            <td><strong>KES {{ expenditure.amount|floatformat:2 }}</strong></td>
+                            <td>
+                                <span class="badge" style="background: var(--info-color); color: white;">
+                                    {{ expenditure.get_role_display|default:"N/A" }}
+                                </span>
+                                <br>
+                                <small style="color: var(--text-light);">
+                                    {% if expenditure.entered_by %}
+                                        {{ expenditure.entered_by.get_full_name|default:expenditure.entered_by.username }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>{{ expenditure.created_at|date:"H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: var(--light-color); font-weight: 600;">
+                            <td>Total:</td>
+                            <td colspan="3"><strong>KES {{ daily_total|floatformat:2 }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                <p>No submitted expenditures for this date.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Line Graph -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-chart-line"></i> Cumulative Expenditure Trend
+            </h3>
+        </div>
+        <div class="card-body">
+            <canvas id="expenditure-chart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Available Dates Info -->
+{% if available_dates %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-calendar-check"></i> Available Dates with Submitted Reports
+        </h3>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for date in available_dates|slice:":20" %}
+            <a href="?date={{ date|date:'Y-m-d' }}" 
+               class="btn btn-sm {% if date == selected_date %}btn-primary{% else %}btn-secondary{% endif %}"
+               style="text-decoration: none;">
+                {{ date|date:"M d, Y" }}
+            </a>
+            {% endfor %}
+            {% if available_dates|length > 20 %}
+            <span style="color: var(--text-light); padding: 8px;">
+                ... and {{ available_dates|length|add:"-20" }} more
+            </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Prepare chart data
+    const cumulativeData = {{ cumulative_data|safe }};
+    
+    const labels = cumulativeData.map(item => {
+        const date = new Date(item.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    
+    const data = cumulativeData.map(item => item.cumulative_total);
+    
+    // Create line chart
+    const ctx = document.getElementById('expenditure-chart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cumulative Expenditure (KES)',
+                    data: data,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'KES ' + context.parsed.y.toLocaleString('en-US', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'KES ' + value.toLocaleString('en-US', {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+<style>
+@media (max-width: 768px) {
+    .content-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+{% endblock %}
+

@@ -1,0 +1,68 @@
+{% extends 'education/base.html' %}
+
+{% block title %}Edit Results - SmartCampus{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-edit"></i> Enter/Edit Results</h2>
+    </div>
+    
+    <div style="background: var(--light-color); padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 0.5rem;">Enrollment Details</h3>
+        <p><strong>Student:</strong> {{ enrollment.student.full_name }} ({{ enrollment.student.admission_number }})</p>
+        <p><strong>Unit:</strong> {{ enrollment.unit.code }} - {{ enrollment.unit.name }}</p>
+        <p><strong>Academic Year:</strong> {{ enrollment.academic_year }} | <strong>Semester:</strong> Semester {{ enrollment.semester }}</p>
+        <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 0.5rem;">
+            <i class="fas fa-info-circle"></i> This result will be linked to Academic Year {{ enrollment.academic_year }}, Semester {{ enrollment.semester }}
+        </p>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">CAT Marks (out of 30)</label>
+            {{ form.cat_marks }}
+            <small style="color: var(--text-light);">Enter marks out of 30</small>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Exam Marks (out of 70)</label>
+            {{ form.exam_marks }}
+            <small style="color: var(--text-light);">Enter marks out of 70</small>
+        </div>
+        
+        <div style="background: #e0f2fe; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+            <p><strong>Total Marks:</strong> <span id="total-marks">-</span> / 100</p>
+            <small style="color: var(--text-light);">Total will be calculated automatically (CAT + Exam)</small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Results
+        </button>
+        <a href="{% if return_url %}{{ return_url }}{% else %}{% url 'result_list' %}{% endif %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const catMarks = document.querySelector('input[name="cat_marks"]');
+        const examMarks = document.querySelector('input[name="exam_marks"]');
+        const totalMarks = document.getElementById('total-marks');
+        
+        function updateTotal() {
+            const cat = parseFloat(catMarks.value) || 0;
+            const exam = parseFloat(examMarks.value) || 0;
+            const total = cat + exam;
+            totalMarks.textContent = total.toFixed(2);
+        }
+        
+        catMarks.addEventListener('input', updateTotal);
+        examMarks.addEventListener('input', updateTotal);
+        updateTotal();
+    });
+</script>
+{% endblock %}
+

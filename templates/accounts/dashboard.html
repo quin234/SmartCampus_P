@@ -1,0 +1,466 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Accounts Dashboard - SmartCampus{% endblock %}
+{% block icon %}chart-line{% endblock %}
+{% block page_title %}Accounts Dashboard{% endblock %}
+{% block page_subtitle %}Overview of financial activities and key metrics{% endblock %}
+
+{% block content %}
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card stat-primary">
+        <div class="stat-icon">
+            <i class="fas fa-calculator"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">KES {{ total_expected|floatformat:2 }}</div>
+            <div class="stat-label">Total Expected Fees</div>
+        </div>
+    </div>
+
+    <div class="stat-card stat-success">
+        <div class="stat-icon">
+            <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">KES {{ total_paid_amount|floatformat:2 }}</div>
+            <div class="stat-label">Total Payments</div>
+        </div>
+    </div>
+
+    <div class="stat-card stat-info">
+        <div class="stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ active_students_in_semester }}</div>
+            <div class="stat-label">Active Students (Semester {{ current_semester }})</div>
+        </div>
+    </div>
+
+    <div class="stat-card stat-danger">
+        <div class="stat-icon">
+            <i class="fas fa-balance-scale"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">KES {{ total_outstanding|floatformat:2 }}</div>
+            <div class="stat-label">Outstanding Balance</div>
+        </div>
+    </div>
+</div>
+
+<!-- Fee Collection Progress Bar -->
+<div class="content-card progress-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-line"></i> Fee Collection Progress</h3>
+    </div>
+    <div class="card-body">
+        <div class="progress-section">
+            <div class="progress-info">
+                <div class="progress-label">
+                    <span>Overall Collection</span>
+                    <span class="progress-percentage">{{ collection_progress|floatformat:1 }}%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ collection_progress }}%">
+                        <span class="progress-text">KES {{ total_paid_amount|floatformat:2 }} / KES {{ total_expected|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="progress-info">
+                <div class="progress-label">
+                    <span>Current Semester (Semester {{ current_semester }})</span>
+                    <span class="progress-percentage">{{ current_semester_progress|floatformat:1 }}%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar progress-bar-semester" style="width: {{ current_semester_progress }}%">
+                        <span class="progress-text">KES {{ current_semester_paid|floatformat:2 }} / KES {{ current_semester_expected|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Grid -->
+<div class="dashboard-grid">
+    <!-- Semester Comparison Chart -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-bar"></i> Semester Comparison ({{ current_academic_year }})</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="semesterChart" height="80"></canvas>
+            {% if growth_percentage != 0 %}
+            <div class="growth-indicator">
+                <i class="fas fa-arrow-{% if growth_percentage > 0 %}up{% else %}down{% endif %}"></i>
+                <span class="growth-text {% if growth_percentage > 0 %}positive{% else %}negative{% endif %}">
+                    {{ growth_percentage|floatformat:1 }}% 
+                    {% if growth_percentage > 0 %}growth{% else %}decline{% endif %} 
+                    from previous semester
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Monthly Payment Trends -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-line"></i> Payment Trends (Last 6 Months)</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="monthlyTrendChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <!-- Projections & Projections -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-project-diagram"></i> Projections & Analysis</h3>
+        </div>
+        <div class="card-body">
+            <div class="projection-grid">
+                <div class="projection-item">
+                    <div class="projection-label">Projected Collection ({{ current_academic_year }})</div>
+                    <div class="projection-value">KES {{ total_academic_year_projected|floatformat:2 }}</div>
+                    <div class="projection-note">Based on current semester performance</div>
+                </div>
+                <div class="projection-item">
+                    <div class="projection-label">Total Active Students</div>
+                    <div class="projection-value">{{ total_active_students }}</div>
+                    <div class="projection-note">All active students in college</div>
+                </div>
+                <div class="projection-item">
+                    <div class="projection-label">Collection Rate</div>
+                    <div class="projection-value">{{ collection_progress|floatformat:1 }}%</div>
+                    <div class="projection-note">Overall fee collection efficiency</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="content-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-money-bill-wave"></i> Recent Payments</h3>
+            <a href="{% url 'accounts:payment_list' %}" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+            {% if recent_payments %}
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Receipt #</th>
+                                <th>Student</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in recent_payments %}
+                            <tr>
+                                <td><a href="{% url 'accounts:payment_detail' pk=payment.pk %}">{{ payment.receipt_number }}</a></td>
+                                <td>{{ payment.student.full_name }}</td>
+                                <td>KES {{ payment.amount_paid|floatformat:2 }}</td>
+                                <td><span class="badge">{{ payment.get_payment_method_display }}</span></td>
+                                <td>{{ payment.date_paid|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <p>No payments yet</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Progress Bar Styles */
+    .progress-card {
+        margin-bottom: 24px;
+    }
+
+    .progress-section {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .progress-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .progress-percentage {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+
+    .progress-bar-container {
+        width: 100%;
+        height: 32px;
+        background: var(--bg-card-hover);
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid var(--border-color);
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: width 1s ease-in-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+
+    .progress-bar-semester {
+        background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    .progress-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: #ffffff;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+    }
+
+    /* Growth Indicator */
+    .growth-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 12px;
+        background: var(--bg-card-hover);
+        border-radius: 8px;
+        border-left: 4px solid var(--success-color);
+    }
+
+    .growth-indicator i {
+        font-size: 18px;
+        color: var(--success-color);
+    }
+
+    .growth-text.positive {
+        color: var(--success-color);
+        font-weight: 600;
+    }
+
+    .growth-text.negative {
+        color: var(--danger-color);
+        font-weight: 600;
+    }
+
+    .growth-indicator .fa-arrow-down {
+        color: var(--danger-color);
+    }
+
+    /* Projection Grid */
+    .projection-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .projection-item {
+        padding: 20px;
+        background: var(--bg-card-hover);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        text-align: center;
+    }
+
+    .projection-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .projection-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 8px;
+    }
+
+    .projection-note {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    /* Chart Container */
+    .card-body canvas {
+        max-height: 300px;
+    }
+
+    @media (max-width: 768px) {
+        .progress-section {
+            gap: 16px;
+        }
+
+        .progress-bar-container {
+            height: 28px;
+        }
+
+        .projection-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Semester Comparison Chart
+    const semesterCtx = document.getElementById('semesterChart');
+    if (semesterCtx) {
+        const semesterLabels = [{% for label in semester_labels %}'{{ label }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+        const semesterData = [{% for amount in semester_amounts %}{{ amount }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+        
+        if (semesterLabels.length > 0 && semesterData.length > 0) {
+            new Chart(semesterCtx, {
+            type: 'bar',
+            data: {
+                labels: semesterLabels,
+                datasets: [{
+                    label: 'Payments (KES)',
+                    data: semesterData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'KES ' + context.parsed.y.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'KES ' + value.toLocaleString('en-KE');
+                            }
+                        }
+                    }
+                }
+            }
+            });
+        } else {
+            semesterCtx.parentElement.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>No semester data available</p></div>';
+        }
+    }
+
+    // Monthly Trend Chart
+    const monthlyCtx = document.getElementById('monthlyTrendChart');
+    if (monthlyCtx) {
+        const monthlyLabels = [{% for label in monthly_labels %}'{{ label }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+        const monthlyData = [{% for amount in monthly_payments %}{{ amount }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+        
+        if (monthlyLabels.length > 0 && monthlyData.length > 0) {
+            new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Monthly Payments',
+                    data: monthlyData,
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'KES ' + context.parsed.y.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'KES ' + value.toLocaleString('en-KE');
+                            }
+                        }
+                    }
+                }
+            }
+            });
+        } else {
+            monthlyCtx.parentElement.innerHTML = '<div class="empty-state"><i class="fas fa-chart-line"></i><p>No trend data available</p></div>';
+        }
+    }
+
+</script>
+{% endblock %}

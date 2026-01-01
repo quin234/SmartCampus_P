@@ -1,0 +1,144 @@
+{% extends 'timetable/base.html' %}
+{% load static %}
+
+{% block title %}Course-Specific Timetable - SmartCampus{% endblock %}
+
+{% block timetable_content %}
+<!-- Inner Tabs for Upload Timetable Group -->
+<div style="display: flex; gap: 8px; margin-bottom: 24px; padding: 0 24px;">
+    <a href="{% url 'timetable:upload_timetable' %}" class="inner-tab-btn {% if request.resolver_match.url_name == 'upload_timetable' %}active{% endif %}" style="display: inline-block;">
+        <i class="fas fa-upload"></i> Upload Timetable
+    </a>
+    <a href="{% url 'timetable:general_timetable' %}" class="inner-tab-btn {% if request.resolver_match.url_name == 'general_timetable' %}active{% endif %}" style="display: inline-block;">
+        <i class="fas fa-calendar-alt"></i> General Timetable
+    </a>
+    <a href="{% url 'timetable:course_specific_timetable' %}" class="inner-tab-btn {% if request.resolver_match.url_name == 'course_specific_timetable' or request.resolver_match.url_name == 'course_specific_timetable_detail' %}active{% endif %}" style="display: inline-block;">
+        <i class="fas fa-book"></i> Course-Specific Timetable
+    </a>
+</div>
+
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-book"></i> Course-Specific Timetable</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" style="margin-bottom: 24px;">
+            <div class="form-group">
+                <label for="course_select">Select Course</label>
+                <select name="course_id" id="course_select" class="form-input" onchange="this.form.submit()">
+                    <option value="">-- Select Course --</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if selected_course and selected_course.id == course.id %}selected{% endif %}>
+                        {{ course.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+        
+        {% if selected_course and active_timetable and timetable_data %}
+        <div style="margin-bottom: 16px;">
+            <p><strong>Course:</strong> {{ selected_course.name }}</p>
+            <p><strong>Academic Year:</strong> {{ active_timetable.academic_year }}</p>
+            <p><strong>Semester:</strong> {{ active_timetable.semester }}</p>
+            <p><strong>Published:</strong> {{ active_timetable.published_at|date:"Y-m-d H:i" }}</p>
+            <a href="{% url 'timetable:export_timetable_pdf' active_timetable.id %}" class="btn btn-primary btn-sm" style="margin-top: 8px;">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </a>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="timetable-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        {% for day in timetable_data.days %}
+                        <th>{{ day.name }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in timetable_data.table_rows %}
+                    <tr>
+                        <td class="time-cell">
+                            {{ row.time_slot.start_time|date:"H:i" }} - {{ row.time_slot.end_time|date:"H:i" }}
+                        </td>
+                        {% for entry in row.day_entries %}
+                        <td class="timetable-cell">
+                            {% if entry %}
+                            <div class="timetable-entry">
+                                <strong>{{ entry.unit.code }}</strong><br>
+                                {{ entry.unit.name }}<br>
+                                <small><i class="fas fa-user"></i> {{ entry.lecturer.get_full_name|default:"TBA" }}</small><br>
+                                <small><i class="fas fa-door-open"></i> {{ entry.classroom.name|default:"TBA" }}</small>
+                            </div>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% elif selected_course %}
+        <p>No published timetable available for {{ selected_course.name }}.</p>
+        {% else %}
+        <p>Please select a course to view its timetable.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timetable-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.timetable-table th,
+.timetable-table td {
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    text-align: center;
+}
+
+.timetable-table th {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.time-cell {
+    background: var(--light-color);
+    font-weight: 600;
+    width: 120px;
+}
+
+.timetable-cell {
+    min-width: 150px;
+    vertical-align: top;
+}
+
+.timetable-entry {
+    padding: 8px;
+    background: var(--bg-card);
+    border-radius: 4px;
+    text-align: left;
+}
+
+.timetable-entry strong {
+    color: var(--primary-color);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.timetable-entry small {
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 4px;
+}
+</style>
+{% endblock %}
+

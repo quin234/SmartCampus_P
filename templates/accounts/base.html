@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>{% block title %}Accounts & Finance - SmartCampus{% endblock %}</title>
+    {% load static %}
+    {% load role_tags %}
+    <link rel="stylesheet" href="{% static 'css/admin/admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Horizontal Top Navigation Bar */
+        .top-nav-menu {
+            position: fixed;
+            top: 70px;
+            left: var(--sidebar-width);
+            right: 0;
+            height: 50px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .top-nav-menu::-webkit-scrollbar {
+            height: 4px;
+        }
+        .top-nav-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .top-nav-menu::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+        .top-nav-menu-list {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+        .top-nav-menu-item {
+            margin: 0;
+        }
+        .top-nav-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            color: var(--text-light);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .top-nav-menu-link:hover {
+            background: var(--light-color);
+            color: var(--primary-color);
+        }
+        .top-nav-menu-link.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        .top-nav-menu-link i {
+            font-size: 16px;
+        }
+        @media (max-width: 768px) {
+            .top-nav-menu {
+                left: 0;
+                padding: 0 16px;
+            }
+            .top-nav-menu-link {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+        }
+        /* Adjust main-content for new top menu bar */
+        .main-content {
+            margin-top: 120px !important;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                margin-top: 120px !important;
+            }
+            .navbar-content {
+                padding: 0 16px;
+            }
+            .college-brand span {
+                display: none;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="dashboard-page">
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="college-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>{{ request.user.college.name }}</span>
+            </div>
+            <div class="navbar-actions">
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profile-btn">
+                        <span class="profile-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-menu" id="profile-menu">
+                        <a href="{% url 'logout' %}" class="profile-menu-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Horizontal Tab Navigation -->
+    <nav class="top-nav-menu">
+        <ul class="top-nav-menu-list">
+            {% if request.user.role == 'director' %}
+            <li class="top-nav-menu-item">
+                <a href="{% url 'director_dashboard' %}" class="top-nav-menu-link {% if request.resolver_match.url_name == 'director_dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Director Dashboard</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="top-nav-menu-item">
+                <a href="{% url 'college_landing' college_slug=request.user.college.get_slug %}" class="top-nav-menu-link {% if request.resolver_match.url_name == 'college_landing' %}active{% endif %}">
+                    <i class="fas fa-building"></i>
+                    <span>Back to College Dashboard</span>
+                </a>
+            </li>
+            {% endif %}
+            <li class="top-nav-menu-item">
+                <a href="{% url 'accounts:balance_report' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="top-nav-menu-link {% if 'balance' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Balance Report</span>
+                </a>
+            </li>
+            <li class="top-nav-menu-item">
+                <a href="{% url 'accounts:debtors_report' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="top-nav-menu-link {% if 'debtors' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Debtors</span>
+                </a>
+            </li>
+            <li class="top-nav-menu-item">
+                <a href="{% url 'accounts:payments_by_term_report' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="top-nav-menu-link {% if 'payments_by_term' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Payments by Semester</span>
+                </a>
+            </li>
+            <li class="top-nav-menu-item">
+                <a href="{% url 'accounts:invoice_list' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="top-nav-menu-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>Invoice</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-{% block icon %}wallet{% endblock %}"></i>
+                    {% block page_title %}Accounts & Finance{% endblock %}
+                </h1>
+                <p class="page_subtitle">{% block page_subtitle %}Manage student finances and payments{% endblock %}</p>
+            </div>
+            {% block header_actions %}{% endblock %}
+        </div>
+
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Navigation Sidebar -->
+    <aside class="sidebar" id="accounts-sidebar">
+        {% if request.user.is_director and has_multiple_branches %}
+        <!-- Branch Selector Header for Directors -->
+        <div class="sidebar-branch-header" style="padding: 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+            <label for="branch-selector" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="fas fa-building"></i> Select Branch
+            </label>
+            <select id="branch-selector" class="form-input" style="width: 100%; padding: 8px; font-size: 14px;" onchange="switchBranch(this.value)">
+                {% for branch in all_branches %}
+                <option value="{{ branch.id }}" {% if active_branch and active_branch.id == branch.id %}selected{% endif %}>
+                    {{ branch.name }}{% if branch.id == request.user.college.id and branch.is_main_college %} (Main){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            {% if active_branch %}
+            <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                <span>Viewing: <strong>{{ active_branch.name }}</strong></span>
+            </div>
+            {% else %}
+            <div style="margin-top: 8px; font-size: 12px; color: var(--warning-color);">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Please select a branch</span>
+            </div>
+            {% endif %}
+        </div>
+        {% elif request.user.is_director and active_branch %}
+        <!-- Show active branch name when only one branch exists -->
+        <div class="sidebar-branch-header" style="padding: 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-card);">
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                <i class="fas fa-building"></i> Active Branch
+            </div>
+            <div style="font-size: 14px; color: var(--text-primary); font-weight: 500;">
+                {{ active_branch.name }}
+            </div>
+        </div>
+        {% endif %}
+        <nav class="sidebar-nav">
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{% url 'accounts:dashboard' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" data-requires-branch="true">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'accounts:fee_structure_courses_list' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="nav-link {% if 'fee_structure' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Fee Structure</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'accounts:payment_list' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="nav-link {% if 'payment' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Payments</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'accounts:student_balances' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="nav-link {% if 'student_balances' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>Student Balances</span>
+                    </a>
+                </li>
+                {% if request.user.is_principal or request.user.is_accounts_officer %}
+                <li class="nav-item">
+                    <a href="{% url 'accounts:daily_expenditure_draft' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="nav-link {% if 'daily_expenditure' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                        <i class="fas fa-receipt"></i>
+                        <span>Daily Expenditure</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if request.user.is_director %}
+                <li class="nav-item">
+                    <a href="{% url 'accounts:daily_expenditure_report' %}{% if active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="nav-link {% if 'daily_expenditure_report' in request.resolver_match.url_name or 'daily_expenditure_graph_data' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Expenditure Report</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'accounts:accounts_settings' %}{% if request.user.is_director and active_branch %}?branch_id={{ active_branch.id }}{% endif %}" class="nav-link {% if 'accounts_settings' in request.resolver_match.url_name or 'sponsorship_settings' in request.resolver_match.url_name %}active{% endif %}" data-requires-branch="true">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <script src="{% static 'js/admin/common.js' %}"></script>
+    <script>
+        // Profile dropdown toggle
+        document.getElementById('profile-btn')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('profile-menu');
+            menu.classList.toggle('active');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+            document.getElementById('profile-menu')?.classList.remove('active');
+        });
+
+        // Branch selection handler for Directors
+        function switchBranch(branchId) {
+            if (!branchId) return;
+            
+            // Store in localStorage for persistence
+            localStorage.setItem('selected_branch_id', branchId);
+            
+            // Update all sidebar links to include branch_id
+            const sidebarLinks = document.querySelectorAll('#accounts-sidebar .nav-link[data-requires-branch="true"]');
+            sidebarLinks.forEach(link => {
+                const url = new URL(link.href);
+                url.searchParams.set('branch_id', branchId);
+                link.href = url.toString();
+            });
+            
+            // Update top nav links if they exist
+            const topNavLinks = document.querySelectorAll('.top-nav-menu-link[data-requires-branch="true"]');
+            topNavLinks.forEach(link => {
+                try {
+                    const url = new URL(link.href, window.location.origin);
+                    url.searchParams.set('branch_id', branchId);
+                    link.href = url.toString();
+                } catch (e) {
+                    // If URL parsing fails, append branch_id manually
+                    const separator = link.href.includes('?') ? '&' : '?';
+                    link.href = link.href + separator + 'branch_id=' + branchId;
+                }
+            });
+            
+            // Reload current page with branch_id parameter
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('branch_id', branchId);
+            window.location.href = currentUrl.toString();
+        }
+
+        // Validate branch selection before navigating (for directors with multiple branches)
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if request.user.is_director and has_multiple_branches %}
+            const sidebarLinks = document.querySelectorAll('#accounts-sidebar .nav-link[data-requires-branch="true"]');
+            const branchSelector = document.getElementById('branch-selector');
+            const activeBranchId = {{ active_branch.id|default:"null" }};
+            const branchSelected = {{ branch_selected|yesno:"true,false" }};
+            
+            // If no branch is selected and multiple branches exist, prevent navigation
+            if (!branchSelected && branchSelector && branchSelector.options.length > 1) {
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        const selectedBranchId = branchSelector.value;
+                        if (!selectedBranchId || selectedBranchId === '') {
+                            e.preventDefault();
+                            alert('Please select a branch from the dropdown above to view data.');
+                            branchSelector.focus();
+                            branchSelector.style.borderColor = 'var(--error-color)';
+                            return false;
+                        }
+                    });
+                });
+            }
+            
+            // Restore branch selection from localStorage on page load
+            const savedBranchId = localStorage.getItem('selected_branch_id');
+            if (savedBranchId && branchSelector && savedBranchId !== activeBranchId) {
+                // Update selector if saved branch is different
+                branchSelector.value = savedBranchId;
+            }
+            {% endif %}
+        });
+
+        // Mobile menu toggle
+        (function() {
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const accountsSidebar = document.getElementById('accounts-sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            if (mobileMenuToggle && accountsSidebar) {
+                // Toggle sidebar on button click
+                mobileMenuToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const isActive = accountsSidebar.classList.contains('active');
+                    
+                    if (isActive) {
+                        accountsSidebar.classList.remove('active');
+                        if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                    } else {
+                        // Force reflow to ensure transform is applied
+                        accountsSidebar.style.display = 'block';
+                        void accountsSidebar.offsetWidth; // Trigger reflow
+                        accountsSidebar.classList.add('active');
+                        if (sidebarOverlay) sidebarOverlay.classList.add('active');
+                    }
+                });
+
+                // Close sidebar when clicking overlay
+                if (sidebarOverlay) {
+                    sidebarOverlay.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        accountsSidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                    });
+                }
+
+                // Close sidebar when clicking outside on mobile (but not on overlay)
+                document.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 768) {
+                        const isOverlay = e.target === sidebarOverlay;
+                        const isSidebar = accountsSidebar.contains(e.target);
+                        const isToggle = mobileMenuToggle.contains(e.target);
+                        
+                        if (!isSidebar && !isToggle && !isOverlay && accountsSidebar.classList.contains('active')) {
+                            accountsSidebar.classList.remove('active');
+                            if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

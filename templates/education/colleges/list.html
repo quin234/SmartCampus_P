@@ -1,0 +1,85 @@
+{% extends 'education/base.html' %}
+
+{% block title %}Colleges - SmartCampus{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-school"></i> Colleges</h2>
+    </div>
+    
+    <div class="filters">
+        <div class="filter-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" onchange="window.location.href='?status=' + this.value">
+                <option value="">All Statuses</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="filter-group" style="flex: 2;">
+            <label class="form-label">Search</label>
+            <form method="get" style="display: flex; gap: 0.5rem;">
+                <input type="text" name="search" class="form-control" placeholder="Search by name, email, or county..." value="{{ request.GET.search }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+                {% if request.GET.search %}
+                    <a href="{% url 'college_list' %}" class="btn btn-secondary">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>County</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Principal</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for college in colleges %}
+                <tr>
+                    <td>{{ college.name }}</td>
+                    <td>{{ college.county }}</td>
+                    <td>{{ college.email }}</td>
+                    <td>{{ college.phone }}</td>
+                    <td>{{ college.principal_name }}</td>
+                    <td>
+                        <span class="badge badge-{% if college.registration_status == 'active' %}success{% elif college.registration_status == 'pending' %}warning{% else %}danger{% endif %}">
+                            {{ college.get_registration_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'college_detail' college.pk %}" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem;">No colleges found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if colleges.has_other_pages %}
+    <div class="pagination">
+        {% if colleges.has_previous %}
+            <a href="?page={{ colleges.previous_page_number }}">&laquo; Previous</a>
+        {% endif %}
+        <span class="current">Page {{ colleges.number }} of {{ colleges.paginator.num_pages }}</span>
+        {% if colleges.has_next %}
+            <a href="?page={{ colleges.next_page_number }}">Next &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

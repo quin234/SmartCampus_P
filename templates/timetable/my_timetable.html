@@ -1,0 +1,155 @@
+{% extends 'timetable/base.html' %}
+{% load static %}
+
+{% block title %}My Timetable - SmartCampus{% endblock %}
+
+{% block timetable_content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-user-clock"></i> My Timetable</h3>
+    </div>
+    <div class="card-body">
+        {% if has_entries %}
+        <div style="margin-bottom: 16px;">
+            <p><strong>Total Classes:</strong> {{ total_entries }}</p>
+            <p style="color: var(--text-secondary); font-size: 14px;">Showing your teaching schedule from published timetables</p>
+        </div>
+        
+        <!-- Timetable Grid -->
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table class="timetable-grid-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th class="grid-time-header" style="position: sticky; left: 0; z-index: 10; background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; min-width: 120px;">Time</th>
+                        {% for day in days %}
+                        <th class="grid-day-header" style="border: 1px solid var(--border-color); padding: 12px; background: var(--primary-color); color: white; min-width: 150px; position: sticky; top: 0; z-index: 9;">{{ day.name }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td class="grid-time-cell" style="position: sticky; left: 0; z-index: 8; background: var(--bg-card); border: 1px solid var(--border-color); padding: 12px; font-weight: bold; text-align: center;">
+                            {{ row.time_slot.start_time|date:"H:i" }}<br>{{ row.time_slot.end_time|date:"H:i" }}
+                        </td>
+                        {% for day_entries in row.day_entries %}
+                        <td class="grid-cell" style="border: 1px solid var(--border-color); padding: 4px; min-height: 80px; vertical-align: top; position: relative;">
+                            {% for entry in day_entries %}
+                            <div class="timetable-slot" 
+                                data-unit-code="{{ entry.unit_code }}"
+                                style="padding: 8px; margin: 2px 0; border-radius: 4px; font-size: 12px; cursor: default;"
+                                title="{{ entry.unit_name }} - {{ entry.course_name }} - {{ entry.classroom_name }}">
+                                <strong>{{ entry.unit_code }}</strong>
+                                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 4px;">
+                                    {{ entry.course_name }}
+                                </div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">
+                                    <i class="fas fa-door-open"></i> {{ entry.classroom_name }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding: 60px 20px; text-align: center;">
+            <i class="fas fa-calendar-times" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 16px;"></i>
+            <h3 style="color: var(--text-primary); margin-bottom: 8px;">No Teaching Allocations</h3>
+            <p style="color: var(--text-secondary);">You currently have no teaching allocations in published timetables.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timetable-grid-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.timetable-grid-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.grid-time-header,
+.grid-time-cell {
+    position: sticky;
+    left: 0;
+    z-index: 8;
+    background: var(--bg-card);
+    font-weight: bold;
+    min-width: 120px;
+}
+
+.grid-day-header {
+    position: sticky;
+    top: 0;
+    z-index: 9;
+    background: var(--primary-color);
+    color: white;
+    text-align: center;
+    min-width: 150px;
+}
+
+.grid-cell {
+    min-height: 80px;
+    vertical-align: top;
+    position: relative;
+    padding: 4px;
+}
+
+.timetable-slot {
+    padding: 8px;
+    margin: 2px 0;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: default;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.timetable-slot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Color generator for units (same as in generate_timetable.html)
+function getUnitColor(unitCode) {
+    let hash = 0;
+    for (let i = 0; i < unitCode.length; i++) {
+        hash = unitCode.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 70%, 85%)`;
+}
+
+// Apply colors to timetable slots
+document.addEventListener('DOMContentLoaded', function() {
+    const slots = document.querySelectorAll('.timetable-slot');
+    slots.forEach(slot => {
+        const unitCode = slot.querySelector('strong')?.textContent;
+        if (unitCode) {
+            const color = getUnitColor(unitCode);
+            slot.style.backgroundColor = color;
+        }
+    });
+});
+</script>
+{% endblock %}
+

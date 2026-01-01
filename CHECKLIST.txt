@@ -1,0 +1,114 @@
+================================================================================
+SMARTCAMPUS PRODUCTION DEPLOYMENT CHECKLIST
+================================================================================
+
+BEFORE UPLOADING TO VPS:
+☐ Review all files in this folder
+☐ Verify wsgi.py uses settings_production.py (already done)
+☐ Verify asgi.py uses settings_production.py (already done)
+☐ Check that no __pycache__ directories are included (already cleaned)
+☐ Ensure .env file is NOT included (create on server)
+
+ON VPS - INITIAL SETUP:
+☐ Upload SmartCampus_P folder to /var/www/smartcampus
+☐ Create application user: smartcampus
+☐ Set correct file permissions
+☐ Create Python virtual environment
+☐ Install requirements.txt
+☐ Create MySQL database and user
+☐ Create .env file from env.example
+☐ Generate SECRET_KEY and add to .env
+☐ Update ALLOWED_HOSTS in .env
+☐ Update database credentials in .env
+☐ Update BASE_URL in .env
+☐ Update STATIC_ROOT and MEDIA_ROOT paths in .env
+
+ON VPS - CONFIGURATION:
+☐ Update nginx.conf with your domain name
+☐ Verify gunicorn_config.py paths
+☐ Verify smartcampus.service paths
+☐ Create required directories (/var/log/smartcampus, etc.)
+☐ Set correct ownership on all directories
+
+ON VPS - DATABASE & MIGRATIONS:
+☐ Run: python manage.py migrate
+☐ Run: python manage.py collectstatic --noinput
+☐ Create superuser: python manage.py createsuperuser
+
+ON VPS - SERVICES:
+☐ Install and start Redis
+☐ Install and configure Gunicorn service
+☐ Install and configure Nginx
+☐ Install SSL certificate (Let's Encrypt)
+☐ Enable and start all services
+
+ON VPS - VERIFICATION:
+☐ Check Gunicorn status: systemctl status smartcampus
+☐ Check Nginx status: systemctl status nginx
+☐ Check Redis status: systemctl status redis-server
+☐ Test website in browser
+☐ Check application logs
+☐ Check Gunicorn logs
+☐ Check Nginx logs
+☐ Verify static files are loading
+☐ Verify media files can be uploaded
+☐ Test login functionality
+☐ Test database connections
+
+SECURITY CHECKLIST:
+☐ DEBUG=False in .env
+☐ SECRET_KEY is strong and unique
+☐ Database password is strong
+☐ .env file has correct permissions (600)
+☐ SSL certificate installed and working
+☐ Firewall configured (UFW)
+☐ Application runs as non-root user
+☐ File permissions are correct
+
+BACKUP CHECKLIST:
+☐ Database backup script configured
+☐ Media files backup configured
+☐ Backup location secured
+☐ Backup schedule set up
+
+================================================================================
+FILES IN THIS PACKAGE:
+================================================================================
+
+Core Application:
+✓ accounts/ - Accounts app
+✓ education/ - Education app  
+✓ superadmin/ - Super admin app
+✓ timetable/ - Timetable app
+✓ smartcampus/ - Project settings
+✓ templates/ - HTML templates
+✓ static/ - CSS and JavaScript files
+✓ media/ - Empty media directories (structure only)
+
+Configuration:
+✓ manage.py - Django management script
+✓ requirements.txt - Python dependencies
+✓ env.example - Environment variables template
+✓ nginx.conf - Nginx web server config
+✓ gunicorn_config.py - Gunicorn application server config
+✓ smartcampus.service - Systemd service file
+
+Documentation:
+✓ DEPLOYMENT.md - Complete deployment guide
+✓ DEPLOY_INSTRUCTIONS.txt - Quick start guide
+✓ README_PRODUCTION.txt - Package overview
+✓ CHECKLIST.txt - This file
+✓ .gitignore - Git ignore rules
+
+================================================================================
+IMPORTANT NOTES:
+================================================================================
+
+1. The .env file is NOT included - create it on the server
+2. All __pycache__ directories have been removed
+3. wsgi.py and asgi.py are configured for production
+4. Media folder structure is created but empty
+5. All paths in config files assume /var/www/smartcampus
+
+================================================================================
+

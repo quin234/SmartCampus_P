@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Registration - SmartCampus</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div style="max-width: 800px; margin: 2rem auto; padding: 0 2rem;">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-school"></i> College Registration</h2>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">College Name *</label>
+                    {{ form.name }}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Address *</label>
+                    {{ form.address }}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">County *</label>
+                    {{ form.county }}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    {{ form.email }}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Phone Number *</label>
+                    {{ form.phone }}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Principal Name *</label>
+                    {{ form.principal_name }}
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Submit Registration
+                </button>
+            </form>
+            
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color); text-align: center;">
+                <p>Already registered? <a href="{% url 'admin_login' %}" style="color: var(--primary-color);">Login here</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

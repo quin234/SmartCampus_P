@@ -1,0 +1,108 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Balance Report - Accounts{% endblock %}
+{% block icon %}chart-bar{% endblock %}
+{% block page_title %}Student Balance Report{% endblock %}
+{% block page_subtitle %}View balances for all students based on expected fees up to current semester{% endblock %}
+
+{% block content %}
+<div class="filters-bar">
+    <form method="get" class="filter-form">
+        <div class="filter-group">
+            <label>Filter:</label>
+            <select name="with_course" class="form-input" onchange="this.form.submit()">
+                <option value="">All Students</option>
+                <option value="true" {% if filter_with_course == 'true' %}selected{% endif %}>Students with Courses Only</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-balance-scale"></i> Student Balances</h3>
+        <div class="card-value" style="color: var(--danger-color); font-size: 20px; font-weight: 700;">
+            Total Outstanding: KES {{ total_outstanding|floatformat:2 }}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if student_data %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Admission No</th>
+                            <th>Student Name</th>
+                            <th>Course</th>
+                            <th>Current Semester</th>
+                            <th>Expected (Up to Current)</th>
+                            <th>Total Paid</th>
+                            <th>Outstanding</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in student_data %}
+                        <tr {% if not item.has_course %}style="background-color: #fff3cd;"{% endif %}>
+                            <td><strong>{{ item.student.admission_number }}</strong></td>
+                            <td>
+                                {{ item.student.full_name }}
+                                {% if not item.has_course %}
+                                    <span class="badge badge-warning" title="Student needs a course assigned to calculate fees">
+                                        <i class="fas fa-exclamation-triangle"></i> No Course
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.student.course %}
+                                    {{ item.student.course.course_name }}
+                                {% else %}
+                                    <span style="color: var(--warning-color); font-style: italic;">Not Assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.current_semester %}
+                                    <span class="badge badge-info">Semester {{ item.current_semester }}</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>KES {{ item.expected_total|floatformat:2 }}</strong>
+                                {% if not item.has_course %}
+                                    <small class="text-muted" style="display: block; font-size: 0.85em;">
+                                        <i class="fas fa-info-circle"></i> Assign course to calculate fees
+                                    </small>
+                                {% endif %}
+                            </td>
+                            <td>KES {{ item.total_payments|floatformat:2 }}</td>
+                            <td>
+                                {% if item.outstanding > 0 %}
+                                    <strong style="color: var(--danger-color);">KES {{ item.outstanding|floatformat:2 }}</strong>
+                                {% elif item.outstanding < 0 %}
+                                    <strong style="color: var(--success-color);">KES {{ item.outstanding|floatformat:2 }}</strong>
+                                    <small class="text-muted">(Credit)</small>
+                                {% else %}
+                                    <strong style="color: var(--success-color);">KES 0.00</strong>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'accounts:payment_list' %}?student={{ item.student.id }}" class="btn btn-sm btn-info" title="View Payments">
+                                    <i class="fas fa-money-bill-wave"></i> Payments
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <p>No students found.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

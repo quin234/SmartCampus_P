@@ -1,0 +1,42 @@
+{% extends 'education/base.html' %}
+
+{% block title %}Enroll Student - SmartCampus{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-user-plus"></i> Enroll Student in Unit</h2>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Student *</label>
+            {{ form.student }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Unit *</label>
+            {{ form.unit }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Academic Year *</label>
+            {{ form.academic_year }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Semester *</label>
+            {{ form.semester }}
+        </div>
+        
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Enroll Student
+        </button>
+        <a href="{% url 'enrollment_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </form>
+</div>
+{% endblock %}
+

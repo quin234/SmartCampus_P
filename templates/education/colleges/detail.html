@@ -1,0 +1,97 @@
+{% extends 'education/base.html' %}
+
+{% block title %}{{ college.name }} - SmartCampus{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-school"></i> {{ college.name }}</h2>
+        <span class="badge badge-{% if college.registration_status == 'active' %}success{% elif college.registration_status == 'pending' %}warning{% else %}danger{% endif %}">
+            {{ college.get_registration_status_display }}
+        </span>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+        <div>
+            <h3 style="margin-bottom: 1rem; color: var(--dark-color);">College Information</h3>
+            <table style="width: 100%;">
+                <tr>
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Name:</td>
+                    <td style="padding: 0.5rem 0;">{{ college.name }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Address:</td>
+                    <td style="padding: 0.5rem 0;">{{ college.address }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem 0; font-weight: 600;">County:</td>
+                    <td style="padding: 0.5rem 0;">{{ college.county }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Email:</td>
+                    <td style="padding: 0.5rem 0;">{{ college.email }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Phone:</td>
+                    <td style="padding: 0.5rem 0;">{{ college.phone }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Principal:</td>
+                    <td style="padding: 0.5rem 0;">{{ college.principal_name }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem 0; font-weight: 600;">Registered:</td>
+                    <td style="padding: 0.5rem 0;">{{ college.created_at|date:"F d, Y" }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div>
+            <h3 style="margin-bottom: 1rem; color: var(--dark-color);">Statistics</h3>
+            <div class="stats-grid" style="grid-template-columns: 1fr;">
+                <div class="stat-card">
+                    <h3>Students</h3>
+                    <div class="stat-value">{{ stats.students }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Courses</h3>
+                    <div class="stat-value">{{ stats.courses }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Units</h3>
+                    <div class="stat-value">{{ stats.units }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Staff</h3>
+                    <div class="stat-value">{{ stats.staff }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if college.registration_status == 'pending' %}
+    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--border-color);">
+        <h3 style="margin-bottom: 1rem;">Actions</h3>
+        <form method="post" style="display: inline-block;">
+            {% csrf_token %}
+            <button type="submit" name="action" value="approve" class="btn btn-success">
+                <i class="fas fa-check"></i> Approve College
+            </button>
+        </form>
+        <form method="post" style="display: inline-block; margin-left: 1rem;">
+            {% csrf_token %}
+            <button type="submit" name="action" value="deactivate" class="btn btn-danger">
+                <i class="fas fa-times"></i> Deactivate
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<div style="margin-top: 1rem;">
+    <a href="{% url 'college_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to List
+    </a>
+</div>
+{% endblock %}
+

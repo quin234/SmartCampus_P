@@ -1,0 +1,81 @@
+{% extends 'superadmin/base.html' %}
+{% load static %}
+
+{% block title %}Colleges Management - Super Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Colleges Management</h1>
+    <p class="page-subtitle">Manage all registered colleges in the system</p>
+</div>
+
+<div class="colleges-management">
+    <!-- Search and Filters -->
+    <div class="filters-section">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="college-search" placeholder="Search colleges...">
+        </div>
+        <div class="filter-buttons">
+            <button class="btn-filter active" data-filter="all">All</button>
+            <button class="btn-filter" data-filter="active">Active</button>
+            <button class="btn-filter" data-filter="pending">Pending</button>
+            <button class="btn-filter" data-filter="suspended">Suspended</button>
+        </div>
+    </div>
+
+    <!-- Colleges Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Owner</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Location</th>
+                    <th>Type</th>
+                    <th>Date Registered</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="colleges-tbody">
+                <tr>
+                    <td colspan="9" class="loading-row">Loading colleges...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="pagination"></div>
+</div>
+
+<!-- Floating Action Button -->
+<button class="fab" id="fab-college" title="Add New College">
+    <i class="fas fa-plus"></i>
+</button>
+
+<!-- College Modal -->
+<div id="college-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-title">Create New College</h2>
+            <button class="modal-close" id="modal-close">&times;</button>
+        </div>
+        <form id="college-form">
+            <div class="modal-body">
+                <!-- Form fields will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="modal-cancel">Cancel</button>
+                <button type="submit" class="btn-primary" id="modal-submit">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'js/admin/superadmin.js' %}"></script>
+{% endblock %}
+

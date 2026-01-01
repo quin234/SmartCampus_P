@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semester Sign-In - {{ college.name }}</title>
+    {% load static %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #3b82f6;
+            --primary-blue-dark: #1e40af;
+            --bg-white: #ffffff;
+            --bg-light: #f8fafc;
+            --text-dark: #1e293b;
+            --text-gray: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .card-subtitle {
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary-blue);
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+        }
+
+        .info-box.success {
+            background: #f0fdf4;
+            border-left-color: var(--success);
+        }
+
+        .info-box.warning {
+            background: #fffbeb;
+            border-left-color: var(--warning);
+        }
+
+        .info-box.danger {
+            background: #fef2f2;
+            border-left-color: var(--danger);
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+
+        .info-box-text {
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .status-item {
+            padding: 16px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-blue-dark);
+        }
+
+        .btn-primary:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .alert.active {
+            display: block;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid var(--success);
+            color: #166534;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid var(--danger);
+            color: #991b1b;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-blue);
+            text-decoration: none;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 0 16px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'student_dashboard' college_slug=college.get_slug %}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">
+                    <i class="fas fa-clipboard-check"></i> Semester Nominal Roll Sign-In
+                </h1>
+                <p class="card-subtitle">{{ college.name }}</p>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <div id="status-container">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">Academic Year</div>
+                        <div class="status-value" id="academic-year">-</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Current Semester</div>
+                        <div class="status-value" id="current-semester">-</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Your Year</div>
+                        <div class="status-value" id="student-year">-</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Your Semester</div>
+                        <div class="status-value" id="student-semester">-</div>
+                    </div>
+                </div>
+
+                <div id="info-box-container"></div>
+
+                <div id="signin-button-container" style="margin-top: 24px;">
+                    <button id="signin-btn" class="btn btn-primary btn-full" onclick="handleSignIn()">
+                        <i class="fas fa-check-circle"></i> Sign In for Semester
+                    </button>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 16px; color: var(--text-gray);">Processing sign-in...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title" style="font-size: 20px;">
+                    <i class="fas fa-info-circle"></i> About Semester Sign-In
+                </h2>
+            </div>
+            <div class="info-box">
+                <div class="info-box-text">
+                    <p><strong>What is Semester Sign-In?</strong></p>
+                    <p style="margin-top: 8px;">Semester sign-in is required at the beginning of each semester to update your academic progress. When you sign in, your year of study and semester will be automatically updated to reflect your current academic standing.</p>
+                    <p style="margin-top: 12px;"><strong>Important:</strong> You can only sign in once per semester. Make sure you sign in during the designated sign-in period.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const collegeSlug = '{{ college.get_slug }}';
+        let signinStatus = null;
+
+        // Load sign-in status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSignInStatus();
+        });
+
+        async function loadSignInStatus() {
+            try {
+                const response = await fetch(`/api/${collegeSlug}/student/signin/status/`);
+                const data = await response.json();
+
+                signinStatus = data;
+
+                // Update UI
+                document.getElementById('academic-year').textContent = data.current_academic_year || 'Not Set';
+                document.getElementById('current-semester').textContent = data.current_semester ? `Semester ${data.current_semester}` : 'Not Set';
+                document.getElementById('student-year').textContent = `Year ${data.student.year_of_study}`;
+                document.getElementById('student-semester').textContent = data.student.current_semester ? `Semester ${data.student.current_semester}` : 'Not Set';
+
+                // Show appropriate info box
+                const infoContainer = document.getElementById('info-box-container');
+                const signinContainer = document.getElementById('signin-button-container');
+
+                if (!data.feature_enabled) {
+                    infoContainer.innerHTML = `
+                        <div class="info-box danger">
+                            <div class="info-box-title">Sign-In Disabled</div>
+                            <div class="info-box-text">Semester sign-in is currently disabled. Please contact your college administration for more information.</div>
+                        </div>
+                    `;
+                    document.getElementById('signin-btn').disabled = true;
+                } else if (data.has_signed_in) {
+                    infoContainer.innerHTML = `
+                        <div class="info-box success">
+                            <div class="info-box-title">Already Signed In</div>
+                            <div class="info-box-text">You have already signed in for ${data.current_academic_year}, Semester ${data.current_semester} on ${new Date(data.signin.signed_in_at).toLocaleDateString()}.</div>
+                        </div>
+                    `;
+                    signinContainer.innerHTML = `
+                        <a href="{% url 'student_signin_history' college_slug=college.get_slug %}" class="btn btn-secondary btn-full">
+                            <i class="fas fa-history"></i> View Sign-In History
+                        </a>
+                    `;
+                } else if (data.can_sign_in) {
+                    infoContainer.innerHTML = `
+                        <div class="info-box warning">
+                            <div class="info-box-title">Ready to Sign In</div>
+                            <div class="info-box-text">You can now sign in for ${data.current_academic_year}, Semester ${data.current_semester}. After signing in, your year and semester will be updated automatically.</div>
+                        </div>
+                    `;
+                } else {
+                    infoContainer.innerHTML = `
+                        <div class="info-box danger">
+                            <div class="info-box-title">Cannot Sign In</div>
+                            <div class="info-box-text">You are not eligible to sign in at this time. Please contact your college administration if you believe this is an error.</div>
+                        </div>
+                    `;
+                    document.getElementById('signin-btn').disabled = true;
+                }
+            } catch (error) {
+                console.error('Error loading sign-in status:', error);
+                showAlert('Error loading sign-in status. Please refresh the page.', 'error');
+            }
+        }
+
+        async function handleSignIn() {
+            const btn = document.getElementById('signin-btn');
+            const loading = document.getElementById('loading');
+            const statusContainer = document.getElementById('status-container');
+
+            btn.disabled = true;
+            statusContainer.style.display = 'none';
+            loading.classList.add('active');
+
+            try {
+                const response = await fetch(`/api/${collegeSlug}/student/signin/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    // Reload status after a short delay
+                    setTimeout(() => {
+                        loadSignInStatus();
+                        statusContainer.style.display = 'block';
+                        loading.classList.remove('active');
+                    }, 2000);
+                } else {
+                    showAlert(data.error || 'Sign-in failed. Please try again.', 'error');
+                    statusContainer.style.display = 'block';
+                    loading.classList.remove('active');
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error signing in:', error);
+                showAlert('An error occurred during sign-in. Please try again.', 'error');
+                statusContainer.style.display = 'block';
+                loading.classList.remove('active');
+                btn.disabled = false;
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `
+                <div class="alert alert-${type} active">
+                    ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
+

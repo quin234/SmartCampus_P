@@ -1,0 +1,20 @@
+[Unit]
+Description=SmartCampus Gunicorn daemon
+After=network.target mysql.service redis.service
+
+[Service]
+User=smartcampus
+Group=smartcampus
+WorkingDirectory=/var/www/smartcampus
+Environment="PATH=/var/www/smartcampus/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=smartcampus.settings_production"
+ExecStart=/var/www/smartcampus/venv/bin/gunicorn \
+    --config /var/www/smartcampus/gunicorn_config.py \
+    smartcampus.wsgi:application
+
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+

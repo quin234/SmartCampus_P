@@ -1,0 +1,74 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Debtors Report - Accounts{% endblock %}
+{% block icon %}exclamation-triangle{% endblock %}
+{% block page_title %}Debtors Report{% endblock %}
+{% block page_subtitle %}Students with outstanding balances{% endblock %}
+
+{% load role_tags %}
+{% block content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-exclamation-triangle"></i> Outstanding Balances</h3>
+        <div class="card-value" style="color: var(--danger-color); font-size: 20px; font-weight: 700;">
+            Total Overdue: KES {{ total_overdue|floatformat:2 }}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if debtor_data %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Admission No</th>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Current Semester</th>
+                            <th>Expected</th>
+                            <th>Total Paid</th>
+                            <th>Outstanding Balance</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in debtor_data %}
+                        <tr>
+                            <td><strong>{{ item.student.admission_number }}</strong></td>
+                            <td>{{ item.student.full_name }}</td>
+                            <td>{{ item.student.course.course_name|default:"N/A" }}</td>
+                            <td>
+                                {% if item.current_semester %}
+                                    <span class="badge badge-info">Semester {{ item.current_semester }}</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>KES {{ item.expected_total|floatformat:2 }}</td>
+                            <td>KES {{ item.total_payments|floatformat:2 }}</td>
+                            <td><strong style="color: var(--danger-color);">KES {{ item.outstanding|floatformat:2 }}</strong></td>
+                            <td>
+                                {% if request.user|can_record_payments %}
+                                <a href="{% url 'accounts:payment_create' %}?student={{ item.student.id }}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-money-bill-wave"></i> Record Payment
+                                </a>
+                                {% else %}
+                                <span class="btn btn-sm btn-success" style="opacity: 0.5; cursor: not-allowed;" title="Only Accounts Officer can record payments">
+                                    <i class="fas fa-money-bill-wave"></i> Record Payment
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-check-circle"></i>
+                <p>No outstanding balances. All students are up to date!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

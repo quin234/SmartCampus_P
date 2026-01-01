@@ -1,0 +1,186 @@
+{% extends 'superadmin/base.html' %}
+{% load static %}
+
+{% block title %}Payment Details{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-header">
+        <h1><i class="fas fa-receipt"></i> Payment Details</h1>
+        <a href="{% url 'superadmin:payments' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Payments
+        </a>
+    </div>
+
+    <div class="content-card">
+        <div class="card-header">
+            <h2>Payment Information</h2>
+        </div>
+        <div class="card-body">
+            <div class="detail-section">
+                <h3>College Information</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>College:</label>
+                        <span>{{ payment.college.name }}</span>
+                    </div>
+                    {% if payment.branch %}
+                    <div class="detail-item">
+                        <label>Branch:</label>
+                        <span>{{ payment.branch.name }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h3>Payment Details</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Amount:</label>
+                        <span class="amount">KES {{ payment.amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Status:</label>
+                        <span class="badge badge-{% if payment.status == 'completed' %}success{% elif payment.status == 'failed' %}danger{% else %}warning{% endif %}">
+                            {{ payment.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Payment Status:</label>
+                        <span>{{ payment.get_payment_status_display }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Created At:</label>
+                        <span>{{ payment.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    {% if payment.payment_date %}
+                    <div class="detail-item">
+                        <label>Payment Date:</label>
+                        <span>{{ payment.payment_date|date:"M d, Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if payment.merchant_request_id or payment.checkout_request_id or payment.receipt_number %}
+            <div class="detail-section">
+                <h3>M-Pesa Transaction Details</h3>
+                <div class="detail-grid">
+                    {% if payment.merchant_request_id %}
+                    <div class="detail-item">
+                        <label>Merchant Request ID:</label>
+                        <span class="monospace">{{ payment.merchant_request_id }}</span>
+                    </div>
+                    {% endif %}
+                    {% if payment.checkout_request_id %}
+                    <div class="detail-item">
+                        <label>Checkout Request ID:</label>
+                        <span class="monospace">{{ payment.checkout_request_id }}</span>
+                    </div>
+                    {% endif %}
+                    {% if payment.receipt_number %}
+                    <div class="detail-item">
+                        <label>M-Pesa Receipt Number:</label>
+                        <span class="monospace">{{ payment.receipt_number }}</span>
+                    </div>
+                    {% endif %}
+                    {% if payment.phone_number %}
+                    <div class="detail-item">
+                        <label>Phone Number:</label>
+                        <span>{{ payment.phone_number }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if payment.valid_from or payment.valid_until %}
+            <div class="detail-section">
+                <h3>Validity Period</h3>
+                <div class="detail-grid">
+                    {% if payment.valid_from %}
+                    <div class="detail-item">
+                        <label>Valid From:</label>
+                        <span>{{ payment.valid_from|date:"M d, Y" }}</span>
+                    </div>
+                    {% endif %}
+                    {% if payment.valid_until %}
+                    <div class="detail-item">
+                        <label>Valid Until:</label>
+                        <span>{{ payment.valid_until|date:"M d, Y" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if payment.notes %}
+            <div class="detail-section">
+                <h3>Notes</h3>
+                <p class="notes">{{ payment.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.detail-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.detail-section:last-child {
+    border-bottom: none;
+}
+
+.detail-section h3 {
+    margin-bottom: 1rem;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.detail-item span {
+    color: #333;
+    font-size: 1rem;
+}
+
+.detail-item .amount {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.detail-item .monospace {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.notes {
+    color: #666;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+</style>
+{% endblock %}
+

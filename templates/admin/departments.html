@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Departments - SmartCampus</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin/admin.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+    <nav class="top-navbar">
+        <div class="navbar-content">
+            <div class="college-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>{{ college.name }}</span>
+            </div>
+            <div class="navbar-actions">
+                <a href="{% url 'college_landing' college_slug=college_slug %}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profile-btn">
+                        <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                        <span class="profile-name">Admin</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-menu" id="profile-menu">
+                        <a href="{% url 'logout' %}" class="profile-menu-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title"><i class="fas fa-building"></i> Departments Management</h1>
+                <p class="page-subtitle">Manage college departments</p>
+            </div>
+        </div>
+
+        <div class="filters-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search departments...">
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list"></i> Departments List</h3>
+                <span class="card-value" id="departments-count">0 departments</span>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="data-table" id="departments-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="departments-tbody">
+                            <tr><td colspan="4" class="loading-row"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </main>
+
+    <button class="fab" id="fab-add-department" title="Add New Department">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <div class="modal" id="department-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Add New Department</h2>
+                <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="department-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Code <span class="required">*</span></label>
+                        <input type="text" id="dept-code" name="code" class="form-input" required>
+                        <span class="error-message" id="error-code"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Name <span class="required">*</span></label>
+                        <input type="text" id="dept-name" name="name" class="form-input" required>
+                        <span class="error-message" id="error-name"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea id="dept-description" name="description" class="form-input" rows="3"></textarea>
+                        <span class="error-message" id="error-description"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit">
+                        <span class="btn-text">Save Department</span>
+                        <span class="btn-loader hidden"><i class="fas fa-spinner fa-spin"></i> Saving...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <div class="loading-overlay hidden" id="loading-overlay"><div class="spinner"></div></div>
+
+    <!-- College Slug for API calls -->
+    <script>
+        window.COLLEGE_SLUG = '{{ college_slug }}';
+    </script>
+    <script src="{% static 'js/admin/common.js' %}"></script>
+    <script src="{% static 'js/admin/departments.js' %}"></script>
+</body>
+</html>
+

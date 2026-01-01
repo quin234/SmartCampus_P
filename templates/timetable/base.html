@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>{% block title %}Timetable Management - SmartCampus{% endblock %}</title>
+    {% load static %}
+    {% load role_tags %}
+    <link rel="stylesheet" href="{% static 'css/admin/admin.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Timetable-specific styles */
+        .timetable-page {
+            min-height: 100vh;
+            background: var(--bg-primary, #f5f7fa);
+        }
+        
+        .timetable-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: var(--bg-card, #ffffff);
+            border-bottom: 1px solid var(--border-color, #e0e0e0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+        }
+        
+        .timetable-navbar-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .timetable-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary, #1a1a1a);
+        }
+        
+        .timetable-brand i {
+            color: var(--primary-color, #007bff);
+            font-size: 24px;
+        }
+        
+        .timetable-navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .profile-dropdown {
+            position: relative;
+        }
+        
+        .profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-primary, #1a1a1a);
+        }
+        
+        .profile-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 150px;
+            display: none;
+        }
+        
+        .profile-menu.show {
+            display: block;
+        }
+        
+        .profile-menu-item {
+            display: block;
+            padding: 12px 16px;
+            color: var(--text-primary, #1a1a1a);
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        
+        .profile-menu-item:hover {
+            background: var(--light-color, #f5f7fa);
+        }
+        
+        .timetable-container {
+            margin-top: 70px;
+            padding: 24px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .tab-navigation {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--border-color, #e0e0e0);
+            padding-bottom: 0;
+            margin-bottom: 24px;
+            background: var(--bg-card, #ffffff);
+            padding: 0 24px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: transparent;
+            color: var(--text-light, #666);
+            text-decoration: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .tab-btn:hover {
+            background: var(--light-color, #f5f7fa);
+            color: var(--primary-color, #007bff);
+        }
+        
+        .tab-btn.active {
+            background: transparent;
+            color: var(--primary-color, #007bff);
+            border-bottom-color: var(--primary-color, #007bff);
+        }
+        
+        .tab-btn i {
+            font-size: 16px;
+        }
+        
+        .tab-group {
+            position: relative;
+        }
+        
+        .inner-tabs {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            display: flex;
+            gap: 4px;
+            background: var(--bg-card, #ffffff);
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            padding: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            margin-top: 2px;
+        }
+        
+        .inner-tab-btn {
+            padding: 8px 16px;
+            background: transparent;
+            color: var(--text-light, #666);
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .inner-tab-btn:hover {
+            background: var(--light-color, #f5f7fa);
+            color: var(--primary-color, #007bff);
+        }
+        
+        .inner-tab-btn.active {
+            background: var(--primary-color, #007bff);
+            color: white;
+        }
+        
+        .content-card {
+            background: var(--bg-card, #ffffff);
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #e0e0e0);
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary, #1a1a1a);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-body {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary, #1a1a1a);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color, #007bff);
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color, #007bff);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-color-dark, #0056b3);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary-color, #6c757d);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--secondary-color-dark, #545b62);
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #138496;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color, #e0e0e0);
+        }
+        
+        .data-table th {
+            background: var(--light-color, #f5f7fa);
+            font-weight: 600;
+            color: var(--text-primary, #1a1a1a);
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .badge-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .badge-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        @media (max-width: 768px) {
+            .timetable-container {
+                padding: 16px;
+            }
+            
+            .tab-navigation {
+                padding: 0 16px;
+            }
+            
+            .tab-btn {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="timetable-page">
+    <!-- Top Navigation Bar -->
+    <nav class="timetable-navbar">
+        <div class="timetable-navbar-content">
+            <div class="timetable-brand">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{% if request.user.college %}{{ request.user.college.name }}{% else %}SmartCampus{% endif %} - Timetable</span>
+            </div>
+            <div class="timetable-navbar-actions">
+                <a href="{% url 'college_landing' college_slug=request.user.college.get_slug %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profile-btn" onclick="toggleProfileMenu()">
+                        <span class="profile-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="profile-menu" id="profile-menu">
+                        <a href="{% url 'logout' %}" class="profile-menu-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="timetable-container">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <!-- Upload Timetable Tab -->
+            <a href="{% url 'timetable:upload_timetable' %}" class="tab-btn {% if request.resolver_match.url_name == 'upload_timetable' or request.resolver_match.url_name == 'general_timetable' or request.resolver_match.url_name == 'course_specific_timetable' or request.resolver_match.url_name == 'course_specific_timetable_detail' %}active{% endif %}">
+                <i class="fas fa-upload"></i> Upload Timetable
+            </a>
+            
+            <!-- Generate Timetable Tab -->
+            <a href="{% url 'timetable:generate_timetable' %}" class="tab-btn {% if request.resolver_match.url_name == 'generate_timetable' or request.resolver_match.url_name == 'manage_classrooms' or request.resolver_match.url_name == 'manage_days' or request.resolver_match.url_name == 'manage_time_slots' %}active{% endif %}">
+                <i class="fas fa-cogs"></i> Generate Timetable
+            </a>
+            
+            <!-- My Timetable Tab (Registrar, Principal, Lecturer only) -->
+            {% if user.is_registrar or user.is_principal or user.is_lecturer %}
+            <a href="{% url 'timetable:my_timetable' %}" class="tab-btn {% if request.resolver_match.url_name == 'my_timetable' %}active{% endif %}">
+                <i class="fas fa-user-clock"></i> My Timetable
+            </a>
+            {% endif %}
+        </div>
+        
+        {% block timetable_content %}
+        {% endblock %}
+    </div>
+
+    <script>
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profile-menu');
+            menu.classList.toggle('show');
+        }
+        
+        // Close profile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const profileBtn = document.getElementById('profile-btn');
+            const profileMenu = document.getElementById('profile-menu');
+            if (!profileBtn.contains(event.target) && !profileMenu.contains(event.target)) {
+                profileMenu.classList.remove('show');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,287 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}Invoice - Accounts{% endblock %}
+{% block icon %}file-invoice{% endblock %}
+{% block page_title %}Invoice{% endblock %}
+{% block page_subtitle %}Search for student and view invoice details{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-search"></i> Search Student</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" class="search-form">
+            <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="form-input" 
+                    placeholder="Enter admission number or student name..."
+                    value="{{ search_query }}"
+                    style="flex: 1;"
+                    autofocus
+                >
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+
+        {% if students %}
+            <div class="search-results">
+                <h4 style="margin-bottom: 15px;">Search Results:</h4>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Admission No</th>
+                                <th>Student Name</th>
+                                <th>Course</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in students %}
+                            <tr>
+                                <td><strong>{{ s.admission_number }}</strong></td>
+                                <td>{{ s.full_name }}</td>
+                                <td>{% if s.course %}{{ s.course.name }}{% else %}N/A{% endif %}</td>
+                                <td>
+                                    <a href="?student_id={{ s.id }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-file-invoice"></i> View Invoices
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if student %}
+            <div class="student-info" style="padding: 15px; margin-top: 20px;">
+                <h4 style="margin-bottom: 10px;">
+                    <i class="fas fa-user"></i> {{ student.full_name }}
+                </h4>
+                <p style="margin: 5px 0;"><strong>Admission No:</strong> {{ student.admission_number }}</p>
+                <p style="margin: 5px 0;"><strong>Course:</strong> {% if student.course %}{{ student.course.name }}{% else %}N/A{% endif %}</p>
+                <p style="margin: 5px 0;"><strong>Current Semester:</strong> 
+                    {% if student.current_semester %}
+                        Semester {{ student.current_semester }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if student and not selected_invoice and not selected_semester %}
+<div class="content-card">
+    <div class="card-body">
+        <div class="empty-state">
+            <i class="fas fa-file-invoice" style="font-size: 48px; color: var(--text-light); margin-bottom: 15px;"></i>
+            <h4 style="margin-bottom: 10px;">No Invoices Found</h4>
+            <p style="margin-bottom: 20px;">This student does not have any invoices yet.</p>
+            
+            {% if student.course %}
+                <div style="margin-bottom: 20px;">
+                    <a href="{% url 'accounts:generate_student_invoices' student_id=student.id %}" 
+                       class="btn btn-primary btn-lg" 
+                       onclick="return confirm('This will generate invoices for all semesters from 1 to the current semester ({{ student.get_course_semester_number|default:'N/A' }}). Continue?');">
+                        <i class="fas fa-plus-circle"></i> Generate Invoices Automatically
+                    </a>
+                </div>
+                <div style="padding: 15px; text-align: left; max-width: 600px; margin: 0 auto;">
+                    <p style="margin-bottom: 10px;"><strong>What will be generated:</strong></p>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>Invoices for all semesters from Semester 1 to current semester</li>
+                        {% if student.get_course_semester_number and student.get_total_course_semesters and student.get_course_semester_number >= student.get_total_course_semesters %}
+                        <li><em>Graduation invoice (to be implemented later)</em></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div style="padding: 15px; text-align: left; max-width: 600px; margin: 0 auto;">
+                    <p><strong>Note:</strong> Student must have a course assigned to generate invoices.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if student and selected_semester and not selected_invoice %}
+<div class="content-card">
+    <div class="card-body">
+        <div class="empty-state">
+            <i class="fas fa-file-invoice" style="font-size: 48px; color: var(--text-light); margin-bottom: 15px;"></i>
+            <h4 style="margin-bottom: 10px;">No Invoice Found</h4>
+            <p>No invoice exists for Semester {{ selected_semester }}. Click the button below to generate it.</p>
+            <div style="margin-top: 20px;">
+                <a href="{% url 'accounts:generate_student_invoices' student_id=student.id %}" 
+                   class="btn btn-primary" 
+                   onclick="return confirm('This will generate invoices for all semesters from 1 to the current semester ({{ current_semester_number }}). Continue?');">
+                    <i class="fas fa-plus-circle"></i> Generate Invoices Automatically
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if student and current_semester_number %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-file-invoice"></i> Invoice Details</h3>
+        <div class="card-value" style="display: flex; align-items: center; gap: 15px;">
+            <form method="get" style="margin: 0;">
+                <input type="hidden" name="student_id" value="{{ student.id }}">
+                <select name="semester" id="semester-select" class="form-input" style="min-width: 200px;" onchange="this.form.submit()">
+                    <option value="">-- Select Semester --</option>
+                    {% for sem_num in semester_range %}
+                        <option value="{{ sem_num }}" {% if selected_semester == sem_num|stringformat:"s" %}selected{% endif %}>
+                            Semester {{ sem_num }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% if selected_invoice %}
+            <span class="badge 
+                {% if selected_invoice.status == 'paid' %}badge-success
+                {% elif selected_invoice.status == 'partial' %}badge-warning
+                {% elif selected_invoice.status == 'overdue' %}badge-danger
+                {% else %}badge-info{% endif %}" style="font-size: 14px;">
+                {{ selected_invoice.get_status_display }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% if selected_invoice %}
+    <div class="card-body">
+        <div class="invoice-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <div class="detail-item">
+                <label>Invoice Number:</label>
+                <strong>{{ selected_invoice.invoice_number }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Student:</label>
+                <strong>{{ selected_invoice.student.full_name }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Admission Number:</label>
+                <strong>{{ selected_invoice.student.admission_number }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Course:</label>
+                <strong>{% if selected_invoice.student.course %}{{ selected_invoice.student.course.name }}{% else %}N/A{% endif %}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Semester:</label>
+                <strong>Semester {{ selected_invoice.semester_number }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Academic Year:</label>
+                <strong>{{ selected_invoice.academic_year }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Invoice Amount:</label>
+                <strong style="font-size: 18px; color: var(--primary-color);">KES {{ selected_invoice.fee_amount|floatformat:2 }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Date Created:</label>
+                <strong>{{ selected_invoice.date_created|date:"M d, Y" }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Due Date:</label>
+                <strong>{{ selected_invoice.due_date|date:"M d, Y"|default:"N/A" }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Total Paid:</label>
+                <strong style="color: var(--success-color);">KES {{ selected_invoice.get_total_paid|floatformat:2 }}</strong>
+            </div>
+            <div class="detail-item">
+                <label>Balance:</label>
+                <strong style="color: var(--danger-color);">KES {{ selected_invoice.get_balance|floatformat:2 }}</strong>
+            </div>
+        </div>
+
+        {% if selected_invoice.notes %}
+        <div class="invoice-notes" style="padding: 15px; margin-bottom: 20px;">
+            <label><strong>Notes:</strong></label>
+            <p style="margin-top: 5px;">{{ selected_invoice.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Payment History -->
+        {% with payments=selected_invoice.payments.all %}
+        {% if payments %}
+        <div class="payment-history">
+            <h4 style="margin-bottom: 15px;"><i class="fas fa-money-bill-wave"></i> Payment History</h4>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Receipt #</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Date Paid</th>
+                            <th>Transaction Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td><strong>{{ payment.receipt_number }}</strong></td>
+                            <td><strong>KES {{ payment.amount_paid|floatformat:2 }}</strong></td>
+                            <td>{{ payment.get_payment_method_display }}</td>
+                            <td>{{ payment.date_paid|date:"M d, Y" }}</td>
+                            <td>{{ payment.transaction_code|default:"N/A" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-money-bill-wave"></i>
+            <p>No payments recorded for this invoice.</p>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+.search-form {
+    margin-bottom: 20px;
+}
+.search-results {
+    margin-top: 20px;
+}
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.detail-item label {
+    font-size: 12px;
+    color: var(--text-light);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.detail-item strong {
+    font-size: 14px;
+    color: var(--text-color);
+}
+</style>
+{% endblock %}
+

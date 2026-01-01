@@ -1,0 +1,61 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Payment {{ payment.receipt_number }} - Accounts{% endblock %}
+{% block icon %}money-bill-wave{% endblock %}
+{% block page_title %}Payment Details{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'accounts:payment_list' %}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to List
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="invoice-header">
+    <div class="invoice-title">
+        <h2>Receipt {{ payment.receipt_number }}</h2>
+        <span class="payment-method-badge">{{ payment.get_payment_method_display }}</span>
+    </div>
+    
+    <div class="invoice-meta">
+        <div class="meta-item">
+            <span class="meta-label">Student</span>
+            <span class="meta-value">{{ payment.student.full_name }}</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Admission Number</span>
+            <span class="meta-value">{{ payment.student.admission_number }}</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Amount Paid</span>
+            <span class="meta-value" style="color: var(--success-color); font-size: 20px;">
+                KES {{ payment.amount_paid|floatformat:2 }}
+            </span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Date Paid</span>
+            <span class="meta-value">{{ payment.date_paid|date:"F d, Y H:i" }}</span>
+        </div>
+        {% if payment.transaction_code %}
+        <div class="meta-item">
+            <span class="meta-label">Transaction Code</span>
+            <span class="meta-value">{{ payment.transaction_code }}</span>
+        </div>
+        {% endif %}
+        {% if payment.recorded_by %}
+        <div class="meta-item">
+            <span class="meta-label">Recorded By</span>
+            <span class="meta-value">{{ payment.recorded_by.get_full_name|default:payment.recorded_by.username }}</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if payment.notes %}
+    <div class="invoice-notes" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+        <strong>Notes:</strong>
+        <p>{{ payment.notes }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

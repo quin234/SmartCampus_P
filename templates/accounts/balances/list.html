@@ -1,0 +1,128 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Student Balances - Accounts{% endblock %}
+{% block icon %}balance-scale{% endblock %}
+{% block page_title %}Student Balances{% endblock %}
+{% block page_subtitle %}View fee balances for all students{% endblock %}
+
+{% load role_tags %}
+{% block content %}
+<div class="content-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-balance-scale"></i> Student Balances</h3>
+        <div class="header-actions">
+            <form method="get" style="display: inline-block; margin-right: 10px;">
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Search students..." class="form-control" style="display: inline-block; width: 250px;">
+                <button type="submit" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Summary Cards -->
+        <div class="summary-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="summary-card" style="padding: 20px; background: var(--bg-card-hover); border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                <div class="summary-label" style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 8px;">Total Expected</div>
+                <div class="summary-value" style="font-size: 1.5em; font-weight: 600; color: var(--text-primary);">
+                    KES {{ total_expected_all|floatformat:2 }}
+                </div>
+            </div>
+            <div class="summary-card" style="padding: 20px; background: var(--bg-card-hover); border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                <div class="summary-label" style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 8px;">Total Paid</div>
+                <div class="summary-value" style="font-size: 1.5em; font-weight: 600; color: #10b981;">
+                    KES {{ total_paid_all|floatformat:2 }}
+                </div>
+            </div>
+            <div class="summary-card" style="padding: 20px; background: var(--bg-card-hover); border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                <div class="summary-label" style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 8px;">Total Outstanding</div>
+                <div class="summary-value" style="font-size: 1.5em; font-weight: 600; color: {% if total_balance_all > 0 %}#ef4444{% else %}#10b981{% endif %};">
+                    KES {{ total_balance_all|floatformat:2 }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Balances Table -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Admission #</th>
+                        <th>Name</th>
+                        <th>Course</th>
+                        <th>Year/Sem</th>
+                        <th>Expected Fees</th>
+                        <th>Total Paid</th>
+                        <th>Balance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in student_data %}
+                    <tr>
+                        <td><strong>{{ data.student.admission_number }}</strong></td>
+                        <td>{{ data.student.full_name }}</td>
+                        <td>{{ data.student.course.name|default:"-" }}</td>
+                        <td>
+                            Year {{ data.student.year_of_study }}, Sem {{ data.student.current_semester|default:"-" }}
+                            {% if data.student.is_sponsored %}
+                                <span class="badge badge-info" style="margin-left: 5px;" title="Sponsored">
+                                    <i class="fas fa-hand-holding-heart"></i>
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>KES {{ data.total_expected|floatformat:2 }}</td>
+                        <td style="color: #10b981;">KES {{ data.total_paid|floatformat:2 }}</td>
+                        <td>
+                            <strong style="color: {% if data.balance > 0 %}#ef4444{% else %}#10b981{% endif %};">
+                                KES {{ data.balance|floatformat:2 }}
+                            </strong>
+                        </td>
+                        <td>
+                            {% if request.user|can_record_payments %}
+                            <a href="{% url 'accounts:payment_create' %}?student={{ data.student.id }}" class="btn btn-sm btn-success" title="Record Payment">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                            {% else %}
+                            <span class="btn btn-sm btn-success" style="opacity: 0.5; cursor: not-allowed;" title="Only Accounts Officer can record payments">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center" style="padding: 40px;">
+                            <i class="fas fa-inbox" style="font-size: 3em; color: var(--text-light); margin-bottom: 16px;"></i>
+                            <p>No students found</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if student_data.has_other_pages %}
+        <div class="pagination" style="margin-top: 24px; display: flex; justify-content: center; gap: 8px;">
+            {% if student_data.has_previous %}
+                <a href="?page={{ student_data.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            {% endif %}
+            
+            <span class="pagination-info" style="padding: 8px 16px; display: flex; align-items: center;">
+                Page {{ student_data.number }} of {{ student_data.paginator.num_pages }}
+            </span>
+            
+            {% if student_data.has_next %}
+                <a href="?page={{ student_data.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-sm btn-secondary">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

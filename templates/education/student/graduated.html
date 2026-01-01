@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Congratulations! - {{ college.name }}</title>
+    {% load static %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .congratulations-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .celebration-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 64px;
+            color: white;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .congratulations-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: #10b981;
+            margin-bottom: 16px;
+        }
+
+        .student-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .congratulations-message {
+            color: #64748b;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .graduation-info {
+            background: #f0fdf4;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+
+        .info-label {
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .certificate-info {
+            background: #e0f2fe;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .certificate-info h3 {
+            font-size: 18px;
+            color: #1e293b;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .certificate-info p {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .btn-logout {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="congratulations-container">
+        <div class="celebration-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        
+        <h1 class="congratulations-title">Congratulations!</h1>
+        <h2 class="student-name">{{ student.full_name }}</h2>
+        <p class="congratulations-message">
+            You have successfully completed your studies at {{ college.name }}!
+        </p>
+        
+        <div class="graduation-info">
+            <div class="info-item">
+                <span class="info-label">Admission Number:</span>
+                <span class="info-value">{{ student.admission_number }}</span>
+            </div>
+            {% if student.course %}
+            <div class="info-item">
+                <span class="info-label">Course Completed:</span>
+                <span class="info-value">{{ student.course.name }}</span>
+            </div>
+            {% endif %}
+            {% if student.graduation_date %}
+            <div class="info-item">
+                <span class="info-label">Graduation Date:</span>
+                <span class="info-value">{{ student.graduation_date|date:"F d, Y" }}</span>
+            </div>
+            {% else %}
+            <div class="info-item">
+                <span class="info-label">Graduation Date:</span>
+                <span class="info-value">{{ student.updated_at|date:"F d, Y" }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="certificate-info">
+            <h3>
+                <i class="fas fa-certificate"></i>
+                Certificate & Transcript
+            </h3>
+            <p>
+                Your graduation certificate and academic transcript will be available for collection from the college administration office.
+            </p>
+            <p>
+                <strong>Contact Information:</strong><br>
+                {% if college.email %}<strong>Email:</strong> {{ college.email }}<br>{% endif %}
+                {% if college.phone %}<strong>Phone:</strong> {{ college.phone }}<br>{% endif %}
+                <strong>Address:</strong> {{ college.address }}
+            </p>
+        </div>
+        
+        <a href="{% url 'student_logout' college_slug=college.get_slug %}" class="btn-logout">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</body>
+</html>
+
+
